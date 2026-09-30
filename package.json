@@ -1,0 +1,30 @@
+{
+  "name": "adt-config-recommender-poc",
+  "version": "1.0.0",
+  "description": "A standalone proof of concept for multimodal LLM-based ADT Studio configuration recommendation.",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "recommend": "tsx src/recommend-openai.ts",
+    "recommend:openai": "tsx src/recommend-openai.ts",
+    "test": "npm run test:analyzer && npm run test:specs && npm run test:openai",
+    "test:analyzer": "tsx src/analyzer/self-test.ts",
+    "test:specs": "tsx src/decision/self-test.ts",
+    "test:openai": "tsx src/recommendation/openai-self-test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@napi-rs/canvas": "^1.0.9",
+    "dotenv": "^18.0.4",
+    "openai": "^7.23.0",
+    "pdfjs-dist": "^6.3.289",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
