@@ -127,6 +127,60 @@ export const OPENAI_RECOMMENDATION_SCHEMA_V2 = z
   })
   .strict();
 
+function createDecisionRequestSchemaV2<TChoice extends string>(
+  spec: ChoiceDecisionSpec<TChoice>,
+  sampledPages: z.ZodLiteral<number>,
+) {
+  const optionIds = spec.options.map(({ id }) => id) as [
+    TChoice,
+    ...TChoice[],
+  ];
+  const choice = z.enum(optionIds);
+  const evidencePages = z.array(sampledPages);
+  const reason = z.string().min(1).max(500);
+
+  return z.union([
+    z.object({
+      choice,
+      confidence: z.enum(OPENAI_CONFIDENCE_VALUES),
+      reason,
+      alternative: z.null(),
+      ambiguityReason: z.null(),
+      evidencePages,
+    }).strict(),
+    z.object({
+      choice,
+      confidence: z.enum(["low", "medium"]),
+      reason,
+      alternative: choice,
+      ambiguityReason: reason,
+      evidencePages,
+    }).strict(),
+  ]);
+}
+
+/** Request-specific Structured Output. The static V2 schema remains the validator's base contract. */
+export function createOpenAIRecommendationSchemaV2(
+  sampledPageNumbers: ReadonlySet<number>,
+) {
+  const pages = [...sampledPageNumbers].sort((a, b) => a - b);
+  if (pages.length === 0 || pages.some((page) => !Number.isSafeInteger(page) || page < 1)) {
+    throw new Error("V2 Structured Output requires at least one valid sampled page");
+  }
+  const sampledPages = z.literal(pages as [number, ...number[]]);
+
+  return z.object({
+    recommendation: z.object({
+      preset: createDecisionRequestSchemaV2(PRESET_SPEC, sampledPages),
+      renderStrategy: createDecisionRequestSchemaV2(RENDER_STRATEGY_SPEC, sampledPages),
+      pageGrouping: createDecisionRequestSchemaV2(PAGE_GROUPING_SPEC, sampledPages),
+      sectioningMode: createDecisionRequestSchemaV2(SECTIONING_MODE_SPEC, sampledPages),
+      activitiesGenerator: createDecisionRequestSchemaV2(ACTIVITIES_SPEC, sampledPages),
+      figureExtraction: createDecisionRequestSchemaV2(FIGURE_EXTRACTION_SPEC, sampledPages),
+    }).strict(),
+  }).strict();
+}
+
 export type OpenAIDecisionRecommendationV2<TChoice extends string> = z.infer<
   ReturnType<typeof createDecisionRecommendationSchemaV2<TChoice>>
 >;

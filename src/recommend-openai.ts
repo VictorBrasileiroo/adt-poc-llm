@@ -5,7 +5,12 @@ import path from "node:path";
 
 import { analyzePdf } from "./analyzer/pdf-analyzer.js";
 import { DECISION_SPECS } from "./decision/specs.js";
-import { recommendBookWithOpenAI } from "./recommendation/openai-recommender.js";
+import {
+  openAIRecommendationFileName,
+  parseOpenAIRecommendationArgs,
+  selectOpenAIRecommender,
+  type OpenAIRecommendationOptions,
+} from "./recommendation/openai-cli.js";
 import { renderSampledPagePairs } from "./recommendation/page-renderer.js";
 import {
   extractSampledPageTexts,
@@ -19,12 +24,18 @@ if (inputPath === undefined) {
   console.error("Usage: npm run recommend:openai -- path/to/book.pdf");
   process.exitCode = 1;
 } else {
-  await runOpenAIRecommendation(inputPath);
+  try {
+    await runOpenAIRecommendation(parseOpenAIRecommendationArgs(process.argv.slice(2)));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`OpenAI recommendation failed: ${message}`);
+    process.exitCode = 1;
+  }
 }
 
-async function runOpenAIRecommendation(filePath: string): Promise<void> {
+async function runOpenAIRecommendation(options: OpenAIRecommendationOptions): Promise<void> {
   const totalStartedAt = performance.now();
-  const resolvedPath = path.resolve(filePath);
+  const resolvedPath = path.resolve(options.filePath);
 
   try {
     await validatePdfPath(resolvedPath);
@@ -32,7 +43,12 @@ async function runOpenAIRecommendation(filePath: string): Promise<void> {
     const model = requireEnvironmentValue("OPENAI_MODEL");
     const bookName = path.basename(resolvedPath, path.extname(resolvedPath));
     const outputDirectory = path.resolve("output");
-    const evidenceDirectory = path.join(outputDirectory, "evidence", bookName);
+    const evidenceDirectory = path.join(
+      outputDirectory,
+      "evidence",
+      bookName,
+      ...(options.variant === "v2" ? ["v2"] : []),
+    );
 
     console.log("[analyze] Building structural BookProfile...");
     const analyzerStartedAt = performance.now();
@@ -54,7 +70,57 @@ async function runOpenAIRecommendation(filePath: string): Promise<void> {
     const evidencePreparationMs = performance.now() - evidenceStartedAt;
 
     console.log("[openai] Sending one multimodal recommendation request...");
-    const result = await recommendBookWithOpenAI(
+    if (options.variant === "v2") {
+      const result = await selectOpenAIRecommender("v2")(
+        apiKey,
+        model,
+        profile,
+        evidence,
+        options.userLanguage,
+      );
+      const totalMs = performance.now() - totalStartedAt;
+      const outputPath = path.join(
+        outputDirectory,
+        openAIRecommendationFileName(bookName, "v2"),
+      );
+      const output = {
+        provider: result.provider,
+        model: result.model,
+        promptVersion: result.promptVersion,
+        userLanguage: options.userLanguage,
+        sourcePdf: resolvedPath,
+        pdfBasename: path.basename(resolvedPath),
+        timestamp: new Date().toISOString(),
+        bookProfile: profile,
+        sampledPagePairs: evidence.map(({ pages, imagePath }) => ({
+          pages: pages
+            .filter((page) => page !== undefined)
+            .map(({ pageNumber, text }) => ({
+              pageNumber,
+              extractedTextCharacters: text.length,
+            })),
+          evidenceImage: path.relative(process.cwd(), imagePath),
+          maximumExtractedCharactersPerPage: MAX_EXTRACTED_CHARS_PER_PAGE,
+        })),
+        recommendation: result.recommendation,
+        usage: result.usage,
+        timing: {
+          analyzerMs,
+          evidencePreparationMs,
+          inferenceMs: result.inferenceMs,
+          totalMs,
+        },
+      };
+
+      await mkdir(outputDirectory, { recursive: true });
+      await writeFile(outputPath, `${JSON.stringify(output, null, 2)}\n`, "utf8");
+      console.log(`\nSaved: ${path.relative(process.cwd(), outputPath)}`);
+      console.log("\nOpenAI recommendation JSON");
+      console.log(JSON.stringify(output, null, 2));
+      return;
+    }
+
+    const result = await selectOpenAIRecommender("v1")(
       apiKey,
       model,
       profile,
@@ -64,7 +130,7 @@ async function runOpenAIRecommendation(filePath: string): Promise<void> {
     const totalMs = performance.now() - totalStartedAt;
     const outputPath = path.join(
       outputDirectory,
-      `${bookName}.openai-recommendation.json`,
+      openAIRecommendationFileName(bookName, "v1"),
     );
     const output = {
       provider: result.provider,
