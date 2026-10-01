@@ -90,7 +90,7 @@ export function validateOpenAIRecommendations(
   return recommendations;
 }
 
-/** V2 is structural only and is not used by the baseline V1 request. */
+/** V2 remains separate from the baseline V1 request. */
 function createDecisionRecommendationSchemaV2<TChoice extends string>(
   spec: ChoiceDecisionSpec<TChoice>,
 ) {
@@ -137,3 +137,41 @@ export type OpenAIRecommendationOutputV2 = z.infer<
 
 export type OpenAIBookConfigurationRecommendationV2 =
   OpenAIRecommendationOutputV2["recommendation"];
+
+export function validateOpenAIRecommendationOutputV2(
+  value: unknown,
+  sampledPageNumbers: ReadonlySet<number>,
+): OpenAIRecommendationOutputV2 {
+  const parsed = OPENAI_RECOMMENDATION_SCHEMA_V2.parse(value);
+
+  for (const spec of DECISION_SPECS) {
+    const decision = parsed.recommendation[spec.id];
+    const prefix = `OpenAI V2 response for ${spec.id}`;
+
+    if (decision.alternative !== null) {
+      if (decision.alternative === decision.choice) {
+        throw new Error(`${prefix} has alternative equal to choice`);
+      }
+      if (decision.confidence === "high") {
+        throw new Error(`${prefix} cannot have an alternative with high confidence`);
+      }
+      if (decision.ambiguityReason === null) {
+        throw new Error(`${prefix} requires ambiguityReason when alternative is present`);
+      }
+    } else if (decision.ambiguityReason !== null) {
+      throw new Error(`${prefix} cannot provide ambiguityReason without an alternative`);
+    }
+
+    for (let index = 0; index < decision.evidencePages.length; index += 1) {
+      const pageNumber = decision.evidencePages[index]!;
+      if (!sampledPageNumbers.has(pageNumber)) {
+        throw new Error(`${prefix} cites unsampled page ${pageNumber}`);
+      }
+      if (index > 0 && decision.evidencePages[index - 1]! >= pageNumber) {
+        throw new Error(`${prefix} evidencePages must be unique and sorted`);
+      }
+    }
+  }
+
+  return parsed;
+}

@@ -24,6 +24,7 @@ import {
   OPENAI_CONFIDENCE_VALUES,
   OPENAI_RECOMMENDATION_SCHEMA,
   OPENAI_RECOMMENDATION_SCHEMA_V2,
+  validateOpenAIRecommendationOutputV2,
   validateOpenAIRecommendations,
   type OpenAIBookConfigurationRecommendationV2,
   type OpenAIDecisionRecommendationV2,
@@ -201,6 +202,65 @@ assert.deepEqual(parsedOutputV2, validOutputV2);
 assert.deepEqual(
   Object.keys(parsedOutputV2.recommendation),
   DECISION_SPECS.map(({ id }) => id),
+);
+
+const sampledPagesV2 = new Set([2, 3, 4, 5, 6, 7]);
+const validatedOutputV2: OpenAIRecommendationOutputV2 =
+  validateOpenAIRecommendationOutputV2(validOutputV2, sampledPagesV2);
+assert.deepEqual(validatedOutputV2, validOutputV2);
+
+for (const spec of DECISION_SPECS) {
+  const alternative = spec.options[1]!.id;
+  const validateWith = (changes: Partial<MutableRecommendationV2>) => {
+    const output = structuredClone(validOutputV2);
+    Object.assign(output.recommendation[spec.id]!, changes);
+    return validateOpenAIRecommendationOutputV2(output, sampledPagesV2);
+  };
+  const rejectsWith = (
+    changes: Partial<MutableRecommendationV2>,
+    problem: RegExp,
+  ) => {
+    assert.throws(
+      () => validateWith(changes),
+      (error: unknown) =>
+        error instanceof Error &&
+        error.message.includes(`OpenAI V2 response for ${spec.id}`) &&
+        problem.test(error.message),
+    );
+  };
+
+  for (const confidence of ["medium", "low"]) {
+    assert.doesNotThrow(() => validateWith({ confidence }));
+    assert.doesNotThrow(() => validateWith({
+      confidence,
+      alternative,
+      ambiguityReason: "Both options remain plausible.",
+    }));
+  }
+  assert.doesNotThrow(() => validateWith({ confidence: "high" }));
+  assert.doesNotThrow(() => validateWith({ evidencePages: [] }));
+  assert.doesNotThrow(() => validateWith({ evidencePages: [2, 6] }));
+
+  rejectsWith({
+    alternative: spec.options[0]!.id,
+    ambiguityReason: "Both options remain plausible.",
+  }, /alternative equal to choice/);
+  rejectsWith({ alternative, ambiguityReason: null }, /requires ambiguityReason/);
+  rejectsWith({ ambiguityReason: "Another option is plausible." }, /without an alternative/);
+  rejectsWith({
+    confidence: "high",
+    alternative,
+    ambiguityReason: "Both options remain plausible.",
+  }, /high confidence/);
+  rejectsWith({ evidencePages: [2, 99] }, /unsampled page 99/);
+  rejectsWith({ evidencePages: [2, 2] }, /unique and sorted/);
+  rejectsWith({ evidencePages: [6, 2] }, /unique and sorted/);
+}
+
+const structurallyInvalidOutputV2 = structuredClone(validOutputV2);
+structurallyInvalidOutputV2.recommendation.preset!.choice = "custom";
+assert.throws(() =>
+  validateOpenAIRecommendationOutputV2(structurallyInvalidOutputV2, sampledPagesV2),
 );
 
 // Compile-time equality checks prevent the inferred choices from widening to string.
