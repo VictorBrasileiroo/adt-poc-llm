@@ -7,6 +7,7 @@ import { analyzePdf } from "./analyzer/pdf-analyzer.js";
 import { DECISION_SPECS } from "./decision/specs.js";
 import {
   openAIRecommendationFileName,
+  openAIRecommendationEvidenceDirectory,
   parseOpenAIRecommendationArgs,
   selectOpenAIRecommender,
   type OpenAIRecommendationOptions,
@@ -43,12 +44,7 @@ async function runOpenAIRecommendation(options: OpenAIRecommendationOptions): Pr
     const model = requireEnvironmentValue("OPENAI_MODEL");
     const bookName = path.basename(resolvedPath, path.extname(resolvedPath));
     const outputDirectory = path.resolve("output");
-    const evidenceDirectory = path.join(
-      outputDirectory,
-      "evidence",
-      bookName,
-      ...(options.variant === "v2" ? ["v2"] : []),
-    );
+    const evidenceDirectory = openAIRecommendationEvidenceDirectory(outputDirectory, bookName, options.variant);
 
     console.log("[analyze] Building structural BookProfile...");
     const analyzerStartedAt = performance.now();
@@ -70,8 +66,8 @@ async function runOpenAIRecommendation(options: OpenAIRecommendationOptions): Pr
     const evidencePreparationMs = performance.now() - evidenceStartedAt;
 
     console.log("[openai] Sending one multimodal recommendation request...");
-    if (options.variant === "v2") {
-      const result = await selectOpenAIRecommender("v2")(
+    if (options.variant !== "v1") {
+      const result = await selectOpenAIRecommender(options.variant)(
         apiKey,
         model,
         profile,
@@ -81,7 +77,7 @@ async function runOpenAIRecommendation(options: OpenAIRecommendationOptions): Pr
       const totalMs = performance.now() - totalStartedAt;
       const outputPath = path.join(
         outputDirectory,
-        openAIRecommendationFileName(bookName, "v2"),
+        openAIRecommendationFileName(bookName, options.variant),
       );
       const output = {
         provider: result.provider,

@@ -143,3 +143,44 @@ export const DECISION_SPECS = [
   ACTIVITIES_SPEC,
   FIGURE_EXTRACTION_SPEC,
 ] as const;
+
+export const CARD3_RENDER_STRATEGY_SPEC = {
+  id: "renderStrategy",
+  instructions: "Which ADT rendering strategy best fits this book?",
+  options: [
+    {
+      id: "llm",
+      description:
+        "Adaptive AI-generated layout that can reorganize each page according to its content.",
+    },
+    {
+      id: "llm-overlay",
+      description:
+        "AI-generated layout that keeps the original page as a visual background with text overlaid.",
+    },
+    {
+      id: "single_column",
+      description:
+        "Reflowable full-width layout suited to dense reference, documentation, and technical content.",
+    },
+    {
+      id: "two_column_story",
+      description:
+        "Template for illustrated stories with large images and relatively little text.",
+    },
+    {
+      id: "fixed_layout",
+      description:
+        "Preserves the original page composition using the page image as background with positioned text.",
+    },
+  ],
+} as const satisfies ChoiceDecisionSpec<RenderStrategyDecision>;
+
+export const CARD3_DECISION_SPECS = [
+  PRESET_SPEC,
+  CARD3_RENDER_STRATEGY_SPEC,
+  PAGE_GROUPING_SPEC,
+  SECTIONING_MODE_SPEC,
+  ACTIVITIES_SPEC,
+  FIGURE_EXTRACTION_SPEC,
+] as const;

@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 
 import {
   ACTIVITIES_SPEC,
+  CARD3_DECISION_SPECS,
+  CARD3_RENDER_STRATEGY_SPEC,
   DECISION_SPECS,
   FIGURE_EXTRACTION_SPEC,
   PAGE_GROUPING_SPEC,
@@ -71,6 +73,17 @@ assertOptionIds(PAGE_GROUPING_SPEC, ["single", "spread"]);
 assertOptionIds(SECTIONING_MODE_SPEC, ["page", "dynamic"]);
 assertOptionIds(ACTIVITIES_SPEC, ["enabled", "disabled"]);
 assertOptionIds(FIGURE_EXTRACTION_SPEC, ["off", "auto", "all"]);
+
+assert.deepEqual(CARD3_DECISION_SPECS, DECISION_SPECS);
+assert.deepEqual(CARD3_DECISION_SPECS.map(({ id }) => id), specs.map(({ id }) => id));
+assert.notStrictEqual(CARD3_RENDER_STRATEGY_SPEC, RENDER_STRATEGY_SPEC);
+assert.notStrictEqual(CARD3_RENDER_STRATEGY_SPEC.options, RENDER_STRATEGY_SPEC.options);
+for (let index = 0; index < DECISION_SPECS.length; index++) {
+  if (index !== 1) assert.strictEqual(CARD3_DECISION_SPECS[index], DECISION_SPECS[index]);
+}
+assert.deepEqual(RENDER_STRATEGY_SPEC.options.map(({ id }) => id), [
+  "llm", "llm-overlay", "single_column", "two_column_story", "fixed_layout",
+]);
 
 console.log("Decision specs self-test passed.");
 

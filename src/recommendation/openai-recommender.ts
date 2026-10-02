@@ -4,9 +4,11 @@ import { zodTextFormat } from "openai/helpers/zod";
 import type { BookProfile } from "../analyzer/types.js";
 import {
   buildOpenAIRecommendationInstructionsV2,
+  buildOpenAIRecommendationInstructionsV2RenderSpecs,
   buildMultimodalRecommendationInput,
   OPENAI_PROMPT_VERSION,
   OPENAI_PROMPT_VERSION_V2,
+  OPENAI_PROMPT_VERSION_V2_RENDER_SPECS,
   OPENAI_RECOMMENDATION_INSTRUCTIONS,
 } from "./openai-prompt.js";
 import {
@@ -105,7 +107,36 @@ export async function recommendBookWithOpenAIV2(
   userLanguage: string,
   client: OpenAI = new OpenAI({ apiKey, maxRetries: 0 }),
 ): Promise<OpenAIRecommendationResultV2> {
-  const instructions = buildOpenAIRecommendationInstructionsV2(userLanguage);
+  return recommendBookWithOpenAIV2Instructions(
+    model, profile, pairs,
+    buildOpenAIRecommendationInstructionsV2(userLanguage),
+    OPENAI_PROMPT_VERSION_V2, client,
+  );
+}
+
+export async function recommendBookWithOpenAIV2RenderSpecs(
+  apiKey: string,
+  model: string,
+  profile: BookProfile,
+  pairs: readonly SampledPagePair[],
+  userLanguage: string,
+  client: OpenAI = new OpenAI({ apiKey, maxRetries: 0 }),
+): Promise<OpenAIRecommendationResultV2> {
+  return recommendBookWithOpenAIV2Instructions(
+    model, profile, pairs,
+    buildOpenAIRecommendationInstructionsV2RenderSpecs(userLanguage),
+    OPENAI_PROMPT_VERSION_V2_RENDER_SPECS, client,
+  );
+}
+
+async function recommendBookWithOpenAIV2Instructions(
+  model: string,
+  profile: BookProfile,
+  pairs: readonly SampledPagePair[],
+  instructions: string,
+  promptVersion: string,
+  client: OpenAI,
+): Promise<OpenAIRecommendationResultV2> {
   const input = buildMultimodalRecommendationInput(profile, pairs);
   const sampledPageNumbers = new Set(
     pairs.flatMap(({ pages }) =>
@@ -143,7 +174,7 @@ export async function recommendBookWithOpenAIV2(
   return {
     provider: "openai",
     model,
-    promptVersion: OPENAI_PROMPT_VERSION_V2,
+    promptVersion,
     recommendation,
     usage: {
       inputTokens: response.usage?.input_tokens,
