@@ -216,6 +216,34 @@ export const CARD3_PRESET_DECISION_SPECS = [
   FIGURE_EXTRACTION_SPEC,
 ] as const;
 
+export const CARD3_PRESET_SPEC_V2 = {
+  id: "preset",
+  instructions: "Which ADT preset best matches the book as a whole? Prioritize explicit evidence about the work's genre and primary purpose over surface characteristics of the sampled pages. If sampled pages are front matter, use what they say about the work itself rather than classifying the front matter as the whole book. If the overall purpose remains genuinely unclear, reflect that uncertainty through confidence or an alternative instead of inferring from layout, image size, text density, or writing tone alone.",
+  options: [
+    {
+      id: "textbook",
+      description: "Instructional material whose primary purpose is to teach, practice, or assess knowledge or skills. Strong evidence includes lessons, learning objectives, guided instruction, exercises, activities, or curricular progression. Factual content, illustrations, structured chapters, or educational use alone do not make a book a textbook.",
+    },
+    {
+      id: "storybook",
+      description: "Literary or narrative work whose primary content is a story, such as a novel, children's story, chapter book, comic, or other work centered on plot, characters, or narrative events. Do not choose solely because the writing has a storytelling tone, the chapters are short, the pages are illustrated, or factual events are presented narratively.",
+    },
+    {
+      id: "reference",
+      description: "Scientific, technical, or specialized informational material whose primary purpose is to communicate, document, organize, or support consultation of factual, research, or technical knowledge. Expository or factual writing alone is not enough when the work is primarily instructional or literary.",
+    },
+  ],
+} as const satisfies ChoiceDecisionSpec<PresetDecision>;
+
+export const CARD3_PRESET_V2_DECISION_SPECS = [
+  CARD3_PRESET_SPEC_V2,
+  CARD3_RENDER_STRATEGY_SPEC,
+  PAGE_GROUPING_SPEC,
+  SECTIONING_MODE_SPEC,
+  ACTIVITIES_SPEC,
+  FIGURE_EXTRACTION_SPEC,
+] as const;
+
 export const CARD3_V2_RENDER_STRATEGY_SPEC = {
   ...CARD3_RENDER_STRATEGY_SPEC,
   options: [

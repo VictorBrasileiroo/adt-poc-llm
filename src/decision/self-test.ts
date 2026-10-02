@@ -5,6 +5,8 @@ import {
   CARD3_DECISION_SPECS,
   CARD3_PRESET_DECISION_SPECS,
   CARD3_PRESET_SPEC,
+  CARD3_PRESET_SPEC_V2,
+  CARD3_PRESET_V2_DECISION_SPECS,
   CARD3_RENDER_STRATEGY_SPEC,
   CARD3_V2_DECISION_SPECS,
   CARD3_V2_RENDER_STRATEGY_SPEC,
@@ -114,6 +116,31 @@ assert.strictEqual(CARD3_PRESET_DECISION_SPECS[2], PAGE_GROUPING_SPEC);
 assert.strictEqual(CARD3_PRESET_DECISION_SPECS[3], SECTIONING_MODE_SPEC);
 assert.strictEqual(CARD3_PRESET_DECISION_SPECS[4], ACTIVITIES_SPEC);
 assert.strictEqual(CARD3_PRESET_DECISION_SPECS[5], FIGURE_EXTRACTION_SPEC);
+assert.notStrictEqual(CARD3_PRESET_SPEC_V2, PRESET_SPEC);
+assert.notStrictEqual(CARD3_PRESET_SPEC_V2, CARD3_PRESET_SPEC);
+assert.notStrictEqual(CARD3_PRESET_SPEC_V2.options, CARD3_PRESET_SPEC.options);
+assertOptionIds(CARD3_PRESET_SPEC_V2, getOptionIds(CARD3_PRESET_SPEC));
+assert.equal(CARD3_PRESET_V2_DECISION_SPECS.length, CARD3_DECISION_SPECS.length);
+assert.strictEqual(CARD3_PRESET_V2_DECISION_SPECS[0], CARD3_PRESET_SPEC_V2);
+assert.strictEqual(CARD3_PRESET_V2_DECISION_SPECS[1], CARD3_RENDER_STRATEGY_SPEC);
+assert.notStrictEqual(CARD3_PRESET_V2_DECISION_SPECS[1], CARD3_V2_RENDER_STRATEGY_SPEC);
+for (let index = 1; index < CARD3_DECISION_SPECS.length; index++) {
+  assert.strictEqual(CARD3_PRESET_V2_DECISION_SPECS[index], CARD3_DECISION_SPECS[index]);
+  assert.strictEqual(CARD3_PRESET_V2_DECISION_SPECS[index], CARD3_PRESET_DECISION_SPECS[index]);
+}
+for (const baseline of [CARD3_DECISION_SPECS, CARD3_PRESET_DECISION_SPECS]) {
+  assert.deepEqual(
+    CARD3_PRESET_V2_DECISION_SPECS
+      .filter((spec, index) => JSON.stringify(spec) !== JSON.stringify(baseline[index]))
+      .map(({ id }) => id),
+    ["preset"],
+  );
+}
+assert.notEqual(CARD3_PRESET_SPEC_V2.instructions, CARD3_PRESET_SPEC.instructions);
+for (let index = 0; index < CARD3_PRESET_SPEC.options.length; index++) {
+  assert.equal(CARD3_PRESET_SPEC_V2.options[index]!.id, CARD3_PRESET_SPEC.options[index]!.id);
+  assert.notEqual(CARD3_PRESET_SPEC_V2.options[index]!.description, CARD3_PRESET_SPEC.options[index]!.description);
+}
 for (let index = 0; index < RENDER_STRATEGY_SPEC.options.length; index++) {
   assert.notEqual(
     CARD3_RENDER_STRATEGY_SPEC.options[index]!.description,

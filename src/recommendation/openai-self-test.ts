@@ -7,7 +7,7 @@ import type OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import type { z } from "zod";
 
-import { CARD3_DECISION_SPECS, CARD3_PRESET_DECISION_SPECS, CARD3_V2_DECISION_SPECS, DECISION_SPECS } from "../decision/specs.js";
+import { CARD3_DECISION_SPECS, CARD3_PRESET_DECISION_SPECS, CARD3_PRESET_SPEC, CARD3_PRESET_V2_DECISION_SPECS, CARD3_V2_DECISION_SPECS, DECISION_SPECS } from "../decision/specs.js";
 import type {
   ActivitiesDecision,
   FigureExtractionDecision,
@@ -31,11 +31,13 @@ import {
   buildOpenAIRecommendationInstructionsV2RenderSpecs,
   buildOpenAIRecommendationInstructionsV2RenderSpecsV2,
   buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV1,
+  buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV2,
   OPENAI_PROMPT_VERSION,
   OPENAI_PROMPT_VERSION_V2,
   OPENAI_PROMPT_VERSION_V2_RENDER_SPECS,
   OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V2,
   OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V1,
+  OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V2,
   OPENAI_RECOMMENDATION_INSTRUCTIONS,
   OPENAI_RECOMMENDATION_INSTRUCTIONS_V2,
 } from "./openai-prompt.js";
@@ -45,6 +47,7 @@ import {
   recommendBookWithOpenAIV2RenderSpecs,
   recommendBookWithOpenAIV2RenderSpecsV2,
   recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV1,
+  recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV2,
 } from "./openai-recommender.js";
 import {
   OPENAI_CONFIDENCE_VALUES,
@@ -136,7 +139,8 @@ assert.equal(OPENAI_PROMPT_VERSION_V2, "adt-multimodal-v2");
 assert.equal(OPENAI_PROMPT_VERSION_V2_RENDER_SPECS, "adt-multimodal-v2-render-specs-v1");
 assert.equal(OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V2, "adt-multimodal-v2-render-specs-v2");
 assert.equal(OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V1, "adt-multimodal-v2-render-specs-v1-preset-specs-v1");
-assert.equal(new Set([OPENAI_PROMPT_VERSION, OPENAI_PROMPT_VERSION_V2, OPENAI_PROMPT_VERSION_V2_RENDER_SPECS, OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V2, OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V1]).size, 5);
+assert.equal(OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V2, "adt-multimodal-v2-render-specs-v1-preset-specs-v2");
+assert.equal(new Set([OPENAI_PROMPT_VERSION, OPENAI_PROMPT_VERSION_V2, OPENAI_PROMPT_VERSION_V2_RENDER_SPECS, OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V2, OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V1, OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V2]).size, 6);
 const card3DecisionContext = buildOpenAIDecisionContext(CARD3_DECISION_SPECS);
 assert.equal(
   createHash("sha256").update(card3DecisionContext).digest("hex"),
@@ -144,7 +148,15 @@ assert.equal(
 );
 const card3V2DecisionContext = buildOpenAIDecisionContext(CARD3_V2_DECISION_SPECS);
 const card3PresetDecisionContext = buildOpenAIDecisionContext(CARD3_PRESET_DECISION_SPECS);
+assert.equal(createHash("sha256").update(JSON.stringify(CARD3_PRESET_SPEC)).digest("hex"), "fbb8ac2fe112a0f3c3b85dc43a18004879f8d14d93e3973e41b84b338f290b17");
+assert.equal(createHash("sha256").update(card3PresetDecisionContext).digest("hex"), "fd2f54c680d0a127364a5d07611a8267bc87866eb6ca8a2815d0d6fe1db7485d");
+const card3PresetV2DecisionContext = buildOpenAIDecisionContext(CARD3_PRESET_V2_DECISION_SPECS);
 assert.notEqual(card3PresetDecisionContext, card3DecisionContext);
+assert.notEqual(card3PresetV2DecisionContext, card3PresetDecisionContext);
+assert.equal(
+  card3PresetV2DecisionContext.replace(buildOpenAIDecisionContext([CARD3_PRESET_V2_DECISION_SPECS[0]]), buildOpenAIDecisionContext([CARD3_PRESET_DECISION_SPECS[0]])),
+  card3PresetDecisionContext,
+);
 assert.equal(
   card3PresetDecisionContext.replace(buildOpenAIDecisionContext([CARD3_PRESET_DECISION_SPECS[0]]), buildOpenAIDecisionContext([CARD3_DECISION_SPECS[0]])),
   card3DecisionContext,
@@ -193,7 +205,9 @@ assert.equal(buildOpenAIRecommendationInstructionsV2("pt-BR"), `${OPENAI_RECOMME
 const card3Instructions = buildOpenAIRecommendationInstructionsV2RenderSpecs("pt-BR");
 const card3V2Instructions = buildOpenAIRecommendationInstructionsV2RenderSpecsV2("pt-BR");
 const card3PresetInstructions = buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV1("pt-BR");
+const card3PresetV2Instructions = buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV2("pt-BR");
 assert.equal(card3PresetInstructions, `${OPENAI_RECOMMENDATION_INSTRUCTIONS_V2.replace(decisionContext, card3PresetDecisionContext)}\n\nUser language: pt-BR`);
+assert.equal(card3PresetV2Instructions, `${OPENAI_RECOMMENDATION_INSTRUCTIONS_V2.replace(decisionContext, card3PresetV2DecisionContext)}\n\nUser language: pt-BR`);
 assert.notEqual(card3Instructions, buildOpenAIRecommendationInstructionsV2("pt-BR"));
 assert.notEqual(card3V2Instructions, card3Instructions);
 assert.equal(
@@ -226,21 +240,31 @@ assert.deepEqual(parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2-ren
 assert.deepEqual(parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2-render-specs-v1-preset-specs-v1", "--user-language", "pt-BR"]), {
   filePath: "book.pdf", variant: "v2-render-specs-v1-preset-specs-v1", userLanguage: "pt-BR",
 });
+assert.deepEqual(parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2-render-specs-v1-preset-specs-v2", "--user-language", "pt-BR"]), {
+  filePath: "book.pdf", variant: "v2-render-specs-v1-preset-specs-v2", userLanguage: "pt-BR",
+});
 assert.equal(selectOpenAIRecommender("v1"), recommendBookWithOpenAI);
 assert.equal(selectOpenAIRecommender("v2"), recommendBookWithOpenAIV2);
 assert.equal(selectOpenAIRecommender("v2-render-specs"), recommendBookWithOpenAIV2RenderSpecs);
 assert.equal(selectOpenAIRecommender("v2-render-specs-v2"), recommendBookWithOpenAIV2RenderSpecsV2);
 assert.equal(selectOpenAIRecommender("v2-render-specs-v1-preset-specs-v1"), recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV1);
+assert.equal(selectOpenAIRecommender("v2-render-specs-v1-preset-specs-v2"), recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV2);
 assert.equal(openAIRecommendationFileName("book", "v1"), "book.openai-recommendation.json");
 assert.equal(openAIRecommendationFileName("book", "v2"), "book.openai-recommendation.v2.json");
 assert.equal(openAIRecommendationFileName("book", "v2-render-specs"), "book.openai-recommendation.v2-render-specs.json");
 assert.equal(openAIRecommendationFileName("book", "v2-render-specs-v2"), "book.openai-recommendation.v2-render-specs-v2.json");
 assert.equal(openAIRecommendationFileName("book", "v2-render-specs-v1-preset-specs-v1"), "book.openai-recommendation.v2-render-specs-v1-preset-specs-v1.json");
+assert.equal(openAIRecommendationFileName("book", "v2-render-specs-v1-preset-specs-v2"), "book.openai-recommendation.v2-render-specs-v1-preset-specs-v2.json");
 assert.equal(openAIRecommendationEvidenceDirectory("output", "book", "v1"), path.join("output", "evidence", "book"));
 assert.equal(openAIRecommendationEvidenceDirectory("output", "book", "v2"), path.join("output", "evidence", "book", "v2"));
 assert.equal(openAIRecommendationEvidenceDirectory("output", "book", "v2-render-specs"), path.join("output", "evidence", "book", "v2-render-specs"));
 assert.equal(openAIRecommendationEvidenceDirectory("output", "book", "v2-render-specs-v2"), path.join("output", "evidence", "book", "v2-render-specs-v2"));
 assert.equal(openAIRecommendationEvidenceDirectory("output", "book", "v2-render-specs-v1-preset-specs-v1"), path.join("output", "evidence", "book", "v2-render-specs-v1-preset-specs-v1"));
+assert.equal(openAIRecommendationEvidenceDirectory("output", "book", "v2-render-specs-v1-preset-specs-v2"), path.join("output", "evidence", "book", "v2-render-specs-v1-preset-specs-v2"));
+for (const variant of ["v1", "v2", "v2-render-specs", "v2-render-specs-v2", "v2-render-specs-v1-preset-specs-v1"] as const) {
+  assert.notEqual(openAIRecommendationFileName("book", variant), openAIRecommendationFileName("book", "v2-render-specs-v1-preset-specs-v2"));
+  assert.notEqual(openAIRecommendationEvidenceDirectory("output", "book", variant), openAIRecommendationEvidenceDirectory("output", "book", "v2-render-specs-v1-preset-specs-v2"));
+}
 for (const variant of ["v1", "v2", "v2-render-specs", "v2-render-specs-v2"] as const) {
   assert.notEqual(openAIRecommendationFileName("book", variant), openAIRecommendationFileName("book", "v2-render-specs-v1-preset-specs-v1"));
   assert.notEqual(openAIRecommendationEvidenceDirectory("output", "book", variant), openAIRecommendationEvidenceDirectory("output", "book", "v2-render-specs-v1-preset-specs-v1"));
@@ -249,8 +273,9 @@ assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2"
 assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2-render-specs"]), /user-language is required/);
 assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2-render-specs-v2"]), /user-language is required/);
 assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2-render-specs-v1-preset-specs-v1"]), /user-language is required/);
+assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2-render-specs-v1-preset-specs-v2"]), /user-language is required/);
 assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--user-language", "pt-BR"]), /only supported with --variant v2/);
-assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v3"]), /must be v1, v2, v2-render-specs, v2-render-specs-v2, or v2-render-specs-v1-preset-specs-v1/);
+assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v3"]), /must be v1, v2, v2-render-specs, v2-render-specs-v2, v2-render-specs-v1-preset-specs-v1, or v2-render-specs-v1-preset-specs-v2/);
 assert.ok(buildBookProfileContext(STORYBOOK_PROFILE).includes('"pageCount": 32'));
 
 const mockPair = {
@@ -576,6 +601,18 @@ const resultPresetSpecs = await recommendBookWithOpenAIV2RenderSpecsV1PresetSpec
 assert.equal(resultPresetSpecs.promptVersion, OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V1);
 assert.deepEqual(resultPresetSpecs.recommendation, resultRenderSpecs.recommendation);
 assert.equal(capturedRequest?.instructions, card3PresetInstructions);
+assert.deepEqual(capturedRequest?.input, renderSpecsV1Request?.input);
+assert.deepEqual(capturedRequest?.text, renderSpecsV1Request?.text);
+assert.equal(capturedRequest?.model, renderSpecsV1Request?.model);
+assert.equal(capturedRequest?.store, renderSpecsV1Request?.store);
+const resultPresetSpecsV2 = await recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV2(
+  "unused-test-key", "test-model", STORYBOOK_PROFILE, [spanishPair], "pt-BR", fakeClient,
+);
+assert.equal(resultPresetSpecsV2.promptVersion, OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V2);
+assert.notEqual(resultPresetSpecsV2.promptVersion, resultPresetSpecs.promptVersion);
+assert.deepEqual(resultPresetSpecsV2.recommendation, resultRenderSpecs.recommendation);
+assert.equal(capturedRequest?.instructions, card3PresetV2Instructions);
+assert.notEqual(capturedRequest?.instructions, renderSpecsV1Request?.instructions);
 assert.deepEqual(capturedRequest?.input, renderSpecsV1Request?.input);
 assert.deepEqual(capturedRequest?.text, renderSpecsV1Request?.text);
 assert.equal(capturedRequest?.model, renderSpecsV1Request?.model);

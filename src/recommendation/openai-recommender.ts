@@ -7,12 +7,14 @@ import {
   buildOpenAIRecommendationInstructionsV2RenderSpecs,
   buildOpenAIRecommendationInstructionsV2RenderSpecsV2,
   buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV1,
+  buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV2,
   buildMultimodalRecommendationInput,
   OPENAI_PROMPT_VERSION,
   OPENAI_PROMPT_VERSION_V2,
   OPENAI_PROMPT_VERSION_V2_RENDER_SPECS,
   OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V2,
   OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V1,
+  OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V2,
   OPENAI_RECOMMENDATION_INSTRUCTIONS,
 } from "./openai-prompt.js";
 import {
@@ -160,6 +162,21 @@ export async function recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV1(
     model, profile, pairs,
     buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV1(userLanguage),
     OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V1, client,
+  );
+}
+
+export async function recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV2(
+  apiKey: string,
+  model: string,
+  profile: BookProfile,
+  pairs: readonly SampledPagePair[],
+  userLanguage: string,
+  client: OpenAI = new OpenAI({ apiKey, maxRetries: 0 }),
+): Promise<OpenAIRecommendationResultV2> {
+  return recommendBookWithOpenAIV2Instructions(
+    model, profile, pairs,
+    buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV2(userLanguage),
+    OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V2, client,
   );
 }
 
