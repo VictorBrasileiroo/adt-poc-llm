@@ -20,10 +20,10 @@ Copy-Item .env.example .env
 Set `OPENAI_API_KEY` and `OPENAI_MODEL` in `.env` (see [`.env.example`](.env.example)). Then run the canonical variant on one included PDF:
 
 ```powershell
-npm.cmd run recommend:openai -- "pdfs/storybook-1930-el-viaje.pdf" --variant poc-v1 --user-language pt-BR
+npm.cmd run recommend:openai -- "pdfs/storybook-1930-el-viaje.pdf" --user-language pt-BR
 ```
 
-`--user-language` specifies the language of `reason` and `ambiguityReason`; book language does not set it. The command makes an OpenAI request and writes `output/storybook-1930-el-viaje.openai-recommendation.poc-v1.json` and contact-sheet PNGs under `output/evidence/storybook-1930-el-viaje/poc-v1/`. Replace the PDF path with another book as needed. On shells where `npm` runs directly, `npm run recommend:openai -- ...` is equivalent. **The CLI default is still the historical `v1`; pass `--variant poc-v1` explicitly.**
+`poc-v1` is the CLI default. `--user-language` is required and specifies the language of `reason` and `ambiguityReason`; book language does not set it. The command makes an OpenAI request and writes `output/storybook-1930-el-viaje.openai-recommendation.poc-v1.json` and contact-sheet PNGs under `output/evidence/storybook-1930-el-viaje/poc-v1/`. Replace the PDF path with another book as needed. On shells where `npm` runs directly, `npm run recommend:openai -- ...` is equivalent. Use `--variant v1` to reproduce the historical V1 behavior without `--user-language`.
 
 ## How it works
 

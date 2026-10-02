@@ -30,7 +30,7 @@ export function parseOpenAIRecommendationArgs(
     throw new Error("A PDF path is required");
   }
 
-  let variant: RecommendationVariant = "v1";
+  let variant: RecommendationVariant = "poc-v1";
   let userLanguage: string | undefined;
   let variantProvided = false;
   for (let index = 0; index < flags.length; index += 2) {
@@ -57,7 +57,7 @@ export function parseOpenAIRecommendationArgs(
   }
 
   if (RECOMMENDATION_VARIANTS[variant].requiresUserLanguage && userLanguage === undefined) {
-    throw new Error(`--user-language is required with --variant ${variant}`);
+    throw new Error(`--user-language is required for ${variant}; provide --user-language (for example, pt-BR)`);
   }
   if (!RECOMMENDATION_VARIANTS[variant].requiresUserLanguage && userLanguage !== undefined) {
     throw new Error(`--user-language is only supported with --variant ${formatVariantList(RECOMMENDATION_VARIANT_IDS.filter((id) => RECOMMENDATION_VARIANTS[id].requiresUserLanguage))}`);

@@ -20,7 +20,7 @@ The target decisions are `preset`, `renderStrategy`, `pageGrouping`, `sectioning
 | Activities Generator | Baseline `ACTIVITIES_SPEC` |
 | Figure Extraction | Baseline `FIGURE_EXTRACTION_SPEC` |
 
-`POC_V1_DECISION_SPECS` composes these exact spec objects. The historical `v2-render-specs` variant sends an equivalent model request; its different promptVersion identifies the experiment in saved results. `poc-v1` names the selected configuration without making users interpret Card 3 experiment history. The CLI default remains the older `v1`, so explicitly choose `poc-v1`.
+`POC_V1_DECISION_SPECS` composes these exact spec objects. The historical `v2-render-specs` variant sends an equivalent model request; its different promptVersion identifies the experiment in saved results. `poc-v1` names the selected configuration without making users interpret Card 3 experiment history. It is the CLI default and requires `--user-language`; historical `v1` remains available with `--variant v1`.
 
 ## 3. End-to-end flow
 
@@ -86,10 +86,10 @@ The selected stable Preset still uses **baseline wording**. Preset Specs v1 and 
 
 ## 8. Running and reading output
 
-Install dependencies and set `OPENAI_API_KEY` and `OPENAI_MODEL` in `.env` as described in the [root README](../README.md). An explicit PowerShell run is:
+Install dependencies and set `OPENAI_API_KEY` and `OPENAI_MODEL` in `.env` as described in the [root README](../README.md). A PowerShell run using the default variant is:
 
 ```powershell
-npm.cmd run recommend:openai -- "pdfs/storybook-1930-el-viaje.pdf" --variant poc-v1 --user-language pt-BR
+npm.cmd run recommend:openai -- "pdfs/storybook-1930-el-viaje.pdf" --user-language pt-BR
 ```
 
 For a book basename `<book>`, the CLI writes `output/<book>.openai-recommendation.poc-v1.json` and evidence PNGs in `output/evidence/<book>/poc-v1/`. Repeating a run for the same book and variant writes to those same locations. A small representative excerpt of the V2 output shape is:

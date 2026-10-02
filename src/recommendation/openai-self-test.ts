@@ -229,9 +229,8 @@ assert.equal(
   `${OPENAI_RECOMMENDATION_INSTRUCTIONS_V2.replace(decisionContext, card3V2DecisionContext)}\n\nUser language: pt-BR`,
 );
 assert.throws(() => buildOpenAIRecommendationInstructionsV2("  "), /userLanguage is required/);
-assert.deepEqual(parseOpenAIRecommendationArgs(["book.pdf"]), {
-  filePath: "book.pdf",
-  variant: "v1",
+assert.deepEqual(parseOpenAIRecommendationArgs(["book.pdf", "--user-language", "pt-BR"]), {
+  filePath: "book.pdf", variant: "poc-v1", userLanguage: "pt-BR",
 });
 assert.deepEqual(parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v1"]), {
   filePath: "book.pdf", variant: "v1",
@@ -259,6 +258,10 @@ assert.deepEqual(parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2-ren
 assert.equal(selectOpenAIRecommender("v1"), recommendBookWithOpenAI);
 assert.deepEqual(RECOMMENDATION_VARIANT_IDS, ["v1", "v2", "poc-v1", "v2-render-specs", "v2-render-specs-v2", "v2-render-specs-v1-preset-specs-v1", "v2-render-specs-v1-preset-specs-v2"]);
 for (const id of RECOMMENDATION_VARIANT_IDS) assert.equal(RECOMMENDATION_VARIANTS[id].id, id);
+for (const id of RECOMMENDATION_VARIANT_IDS) {
+  const flags = id === "v1" ? [] : ["--user-language", "pt-BR"];
+  assert.equal(parseOpenAIRecommendationArgs(["book.pdf", "--variant", id, ...flags]).variant, id);
+}
 assert.equal(resolveRecommendationVariant("v3"), undefined);
 assert.equal(resolveRecommendationVariant("constructor"), undefined);
 assert.equal(openAIRecommendationFileName("book", "v1"), "book.openai-recommendation.json");
@@ -293,7 +296,8 @@ assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "poc
 assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2-render-specs-v2"]), /user-language is required/);
 assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2-render-specs-v1-preset-specs-v1"]), /user-language is required/);
 assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2-render-specs-v1-preset-specs-v2"]), /user-language is required/);
-assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--user-language", "pt-BR"]), /only supported with --variant v2/);
+assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf"]), /--user-language is required for poc-v1.*provide --user-language/);
+assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v1", "--user-language", "pt-BR"]), /only supported with --variant v2/);
 assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v3"]), /must be v1, v2, poc-v1, v2-render-specs, v2-render-specs-v2, v2-render-specs-v1-preset-specs-v1, or v2-render-specs-v1-preset-specs-v2/);
 assert.ok(buildBookProfileContext(STORYBOOK_PROFILE).includes('"pageCount": 32'));
 

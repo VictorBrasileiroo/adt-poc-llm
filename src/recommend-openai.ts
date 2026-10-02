@@ -22,7 +22,7 @@ import {
 const inputPath = process.argv[2];
 
 if (inputPath === undefined) {
-  console.error("Usage: npm run recommend:openai -- path/to/book.pdf");
+  console.error("Usage: npm run recommend:openai -- path/to/book.pdf --user-language pt-BR");
   process.exitCode = 1;
 } else {
   try {

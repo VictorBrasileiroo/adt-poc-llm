@@ -22,7 +22,7 @@ flowchart TD
 
 ## Entry point and data flow
 
-[`src/recommend-openai.ts`](../src/recommend-openai.ts) parses arguments, validates the local PDF path and required `OPENAI_API_KEY`/`OPENAI_MODEL`, and coordinates the stages. The chosen variant sets the Decision Specs, promptVersion, and isolated output paths. `poc-v1` must be selected explicitly because the CLI default remains historical `v1`.
+[`src/recommend-openai.ts`](../src/recommend-openai.ts) parses arguments, validates the local PDF path and required `OPENAI_API_KEY`/`OPENAI_MODEL`, and coordinates the stages. The chosen variant sets the Decision Specs, promptVersion, and isolated output paths. The CLI defaults to `poc-v1` and requires `--user-language`; historical `v1` can be selected explicitly.
 
 The analyzer opens the PDF and visits every page. It aggregates text, image-operation, layout, and activity proxies into one `BookProfile`. Sampling then chooses up to three non-overlapping page pairs from the page count. Text extraction and rendering open the PDF in separate passes for those selected pages. Rendered images are saved as contact-sheet PNGs and sent with sampled text and the global profile. The full PDF is not directly attached to the OpenAI request.
 
