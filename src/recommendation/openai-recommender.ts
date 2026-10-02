@@ -2,23 +2,14 @@ import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 
 import type { BookProfile } from "../analyzer/types.js";
+import { EXPERIMENTAL_RECOMMENDATION_VARIANTS } from "../experiments/recommendation-variants.js";
 import {
   buildOpenAIRecommendationInstructionsV2,
-  buildPoCV1RecommendationInstructions,
-  buildOpenAIRecommendationInstructionsV2RenderSpecs,
-  buildOpenAIRecommendationInstructionsV2RenderSpecsV2,
-  buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV1,
-  buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV2,
   buildMultimodalRecommendationInput,
   OPENAI_PROMPT_VERSION,
-  OPENAI_PROMPT_VERSION_V2,
-  POC_V1_PROMPT_VERSION,
-  OPENAI_PROMPT_VERSION_V2_RENDER_SPECS,
-  OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V2,
-  OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V1,
-  OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V2,
   OPENAI_RECOMMENDATION_INSTRUCTIONS,
 } from "./openai-prompt.js";
+import { CORE_RECOMMENDATION_VARIANTS, type V2RecommendationVariantConfig } from "./variant-config.js";
 import {
   createOpenAIRecommendationSchemaV2,
   OPENAI_RECOMMENDATION_SCHEMA,
@@ -115,11 +106,7 @@ export async function recommendBookWithOpenAIV2(
   userLanguage: string,
   client: OpenAI = new OpenAI({ apiKey, maxRetries: 0 }),
 ): Promise<OpenAIRecommendationResultV2> {
-  return recommendBookWithOpenAIV2Instructions(
-    model, profile, pairs,
-    buildOpenAIRecommendationInstructionsV2(userLanguage),
-    OPENAI_PROMPT_VERSION_V2, client,
-  );
+  return recommendBookWithOpenAIV2Variant(apiKey, model, profile, pairs, userLanguage, CORE_RECOMMENDATION_VARIANTS.v2, client);
 }
 
 export async function recommendBookWithOpenAIV2RenderSpecs(
@@ -130,11 +117,7 @@ export async function recommendBookWithOpenAIV2RenderSpecs(
   userLanguage: string,
   client: OpenAI = new OpenAI({ apiKey, maxRetries: 0 }),
 ): Promise<OpenAIRecommendationResultV2> {
-  return recommendBookWithOpenAIV2Instructions(
-    model, profile, pairs,
-    buildOpenAIRecommendationInstructionsV2RenderSpecs(userLanguage),
-    OPENAI_PROMPT_VERSION_V2_RENDER_SPECS, client,
-  );
+  return recommendBookWithOpenAIV2Variant(apiKey, model, profile, pairs, userLanguage, EXPERIMENTAL_RECOMMENDATION_VARIANTS["v2-render-specs"], client);
 }
 
 export async function recommendBookWithOpenAIPoCV1(
@@ -145,11 +128,7 @@ export async function recommendBookWithOpenAIPoCV1(
   userLanguage: string,
   client: OpenAI = new OpenAI({ apiKey, maxRetries: 0 }),
 ): Promise<OpenAIRecommendationResultV2> {
-  return recommendBookWithOpenAIV2Instructions(
-    model, profile, pairs,
-    buildPoCV1RecommendationInstructions(userLanguage),
-    POC_V1_PROMPT_VERSION, client,
-  );
+  return recommendBookWithOpenAIV2Variant(apiKey, model, profile, pairs, userLanguage, CORE_RECOMMENDATION_VARIANTS["poc-v1"], client);
 }
 
 export async function recommendBookWithOpenAIV2RenderSpecsV2(
@@ -160,11 +139,7 @@ export async function recommendBookWithOpenAIV2RenderSpecsV2(
   userLanguage: string,
   client: OpenAI = new OpenAI({ apiKey, maxRetries: 0 }),
 ): Promise<OpenAIRecommendationResultV2> {
-  return recommendBookWithOpenAIV2Instructions(
-    model, profile, pairs,
-    buildOpenAIRecommendationInstructionsV2RenderSpecsV2(userLanguage),
-    OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V2, client,
-  );
+  return recommendBookWithOpenAIV2Variant(apiKey, model, profile, pairs, userLanguage, EXPERIMENTAL_RECOMMENDATION_VARIANTS["v2-render-specs-v2"], client);
 }
 
 export async function recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV1(
@@ -175,11 +150,7 @@ export async function recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV1(
   userLanguage: string,
   client: OpenAI = new OpenAI({ apiKey, maxRetries: 0 }),
 ): Promise<OpenAIRecommendationResultV2> {
-  return recommendBookWithOpenAIV2Instructions(
-    model, profile, pairs,
-    buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV1(userLanguage),
-    OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V1, client,
-  );
+  return recommendBookWithOpenAIV2Variant(apiKey, model, profile, pairs, userLanguage, EXPERIMENTAL_RECOMMENDATION_VARIANTS["v2-render-specs-v1-preset-specs-v1"], client);
 }
 
 export async function recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV2(
@@ -190,21 +161,19 @@ export async function recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV2(
   userLanguage: string,
   client: OpenAI = new OpenAI({ apiKey, maxRetries: 0 }),
 ): Promise<OpenAIRecommendationResultV2> {
-  return recommendBookWithOpenAIV2Instructions(
-    model, profile, pairs,
-    buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV2(userLanguage),
-    OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V2, client,
-  );
+  return recommendBookWithOpenAIV2Variant(apiKey, model, profile, pairs, userLanguage, EXPERIMENTAL_RECOMMENDATION_VARIANTS["v2-render-specs-v1-preset-specs-v2"], client);
 }
 
-async function recommendBookWithOpenAIV2Instructions(
+export async function recommendBookWithOpenAIV2Variant(
+  apiKey: string,
   model: string,
   profile: BookProfile,
   pairs: readonly SampledPagePair[],
-  instructions: string,
-  promptVersion: string,
-  client: OpenAI,
+  userLanguage: string,
+  variant: V2RecommendationVariantConfig,
+  client: OpenAI = new OpenAI({ apiKey, maxRetries: 0 }),
 ): Promise<OpenAIRecommendationResultV2> {
+  const instructions = buildOpenAIRecommendationInstructionsV2(userLanguage, variant.decisionSpecs);
   const input = buildMultimodalRecommendationInput(profile, pairs);
   const sampledPageNumbers = new Set(
     pairs.flatMap(({ pages }) =>
@@ -242,7 +211,7 @@ async function recommendBookWithOpenAIV2Instructions(
   return {
     provider: "openai",
     model,
-    promptVersion,
+    promptVersion: variant.promptVersion,
     recommendation,
     usage: {
       inputTokens: response.usage?.input_tokens,

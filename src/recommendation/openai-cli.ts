@@ -2,19 +2,25 @@ import path from "node:path";
 
 import {
   recommendBookWithOpenAI,
-  recommendBookWithOpenAIV2,
-  recommendBookWithOpenAIPoCV1,
-  recommendBookWithOpenAIV2RenderSpecs,
-  recommendBookWithOpenAIV2RenderSpecsV2,
-  recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV1,
-  recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV2,
+  recommendBookWithOpenAIV2Variant,
+  type recommendBookWithOpenAIV2,
 } from "./openai-recommender.js";
+import {
+  RECOMMENDATION_VARIANTS,
+  RECOMMENDATION_VARIANT_IDS,
+  resolveRecommendationVariant,
+  type RecommendationVariant,
+} from "./variant-config.js";
 
-export type RecommendationVariant = "v1" | "v2" | "poc-v1" | "v2-render-specs" | "v2-render-specs-v2" | "v2-render-specs-v1-preset-specs-v1" | "v2-render-specs-v1-preset-specs-v2";
+export type { RecommendationVariant } from "./variant-config.js";
 
 export type OpenAIRecommendationOptions =
   | { filePath: string; variant: "v1"; userLanguage?: never }
   | { filePath: string; variant: Exclude<RecommendationVariant, "v1">; userLanguage: string };
+
+function formatVariantList(variants: readonly string[]): string {
+  return `${variants.slice(0, -1).join(", ")}, or ${variants.at(-1)}`;
+}
 
 export function parseOpenAIRecommendationArgs(
   args: readonly string[],
@@ -34,10 +40,11 @@ export function parseOpenAIRecommendationArgs(
       throw new Error(`A value is required for ${flag}`);
     }
     if (flag === "--variant" && !variantProvided) {
-      if (value !== "v1" && value !== "v2" && value !== "poc-v1" && value !== "v2-render-specs" && value !== "v2-render-specs-v2" && value !== "v2-render-specs-v1-preset-specs-v1" && value !== "v2-render-specs-v1-preset-specs-v2") {
-        throw new Error("--variant must be v1, v2, poc-v1, v2-render-specs, v2-render-specs-v2, v2-render-specs-v1-preset-specs-v1, or v2-render-specs-v1-preset-specs-v2");
+      const config = resolveRecommendationVariant(value);
+      if (config === undefined) {
+        throw new Error(`--variant must be ${formatVariantList(RECOMMENDATION_VARIANT_IDS)}`);
       }
-      variant = value;
+      variant = config.id;
       variantProvided = true;
     } else if (flag === "--user-language" && userLanguage === undefined) {
       userLanguage = value.trim();
@@ -49,11 +56,11 @@ export function parseOpenAIRecommendationArgs(
     }
   }
 
-  if (variant !== "v1" && userLanguage === undefined) {
+  if (RECOMMENDATION_VARIANTS[variant].requiresUserLanguage && userLanguage === undefined) {
     throw new Error(`--user-language is required with --variant ${variant}`);
   }
-  if (variant === "v1" && userLanguage !== undefined) {
-    throw new Error("--user-language is only supported with --variant v2, poc-v1, v2-render-specs, v2-render-specs-v2, v2-render-specs-v1-preset-specs-v1, or v2-render-specs-v1-preset-specs-v2");
+  if (!RECOMMENDATION_VARIANTS[variant].requiresUserLanguage && userLanguage !== undefined) {
+    throw new Error(`--user-language is only supported with --variant ${formatVariantList(RECOMMENDATION_VARIANT_IDS.filter((id) => RECOMMENDATION_VARIANTS[id].requiresUserLanguage))}`);
   }
   return variant !== "v1"
     ? { filePath, variant, userLanguage: userLanguage! }
@@ -61,28 +68,20 @@ export function parseOpenAIRecommendationArgs(
 }
 
 export function selectOpenAIRecommender(variant: "v1"): typeof recommendBookWithOpenAI;
-export function selectOpenAIRecommender(variant: "v2"): typeof recommendBookWithOpenAIV2;
-export function selectOpenAIRecommender(variant: "poc-v1"): typeof recommendBookWithOpenAIPoCV1;
-export function selectOpenAIRecommender(variant: "v2-render-specs"): typeof recommendBookWithOpenAIV2RenderSpecs;
-export function selectOpenAIRecommender(variant: "v2-render-specs-v2"): typeof recommendBookWithOpenAIV2RenderSpecsV2;
-export function selectOpenAIRecommender(variant: "v2-render-specs-v1-preset-specs-v1"): typeof recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV1;
-export function selectOpenAIRecommender(variant: "v2-render-specs-v1-preset-specs-v2"): typeof recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV2;
 export function selectOpenAIRecommender(variant: Exclude<RecommendationVariant, "v1">): typeof recommendBookWithOpenAIV2;
 export function selectOpenAIRecommender(variant: RecommendationVariant) {
-  if (variant === "v2") return recommendBookWithOpenAIV2;
-  if (variant === "poc-v1") return recommendBookWithOpenAIPoCV1;
-  if (variant === "v2-render-specs") return recommendBookWithOpenAIV2RenderSpecs;
-  if (variant === "v2-render-specs-v2") return recommendBookWithOpenAIV2RenderSpecsV2;
-  if (variant === "v2-render-specs-v1-preset-specs-v1") return recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV1;
-  if (variant === "v2-render-specs-v1-preset-specs-v2") return recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV2;
-  return recommendBookWithOpenAI;
+  const config = RECOMMENDATION_VARIANTS[variant];
+  if (config.behavior === "v1") return recommendBookWithOpenAI;
+  const recommender: typeof recommendBookWithOpenAIV2 = (...args) =>
+    recommendBookWithOpenAIV2Variant(args[0], args[1], args[2], args[3], args[4], config, args[5]);
+  return recommender;
 }
 
 export function openAIRecommendationFileName(
   bookName: string,
   variant: RecommendationVariant,
 ): string {
-  return `${bookName}.openai-recommendation${variant === "v1" ? "" : `.${variant}`}.json`;
+  return `${bookName}.openai-recommendation${RECOMMENDATION_VARIANTS[variant].recommendationFileSuffix}.json`;
 }
 
 export function openAIRecommendationEvidenceDirectory(
@@ -90,5 +89,6 @@ export function openAIRecommendationEvidenceDirectory(
   bookName: string,
   variant: RecommendationVariant,
 ): string {
-  return path.join(outputDirectory, "evidence", bookName, ...(variant === "v1" ? [] : [variant]));
+  const suffix = RECOMMENDATION_VARIANTS[variant].evidenceDirectorySuffix;
+  return path.join(outputDirectory, "evidence", bookName, ...(suffix === "" ? [] : [suffix]));
 }

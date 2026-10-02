@@ -2,7 +2,7 @@ import type { ResponseInput } from "openai/resources/responses/responses";
 
 import type { BookProfile } from "../analyzer/types.js";
 import { DECISION_SPECS, POC_V1_DECISION_SPECS } from "../decision/specs.js";
-import { CARD3_DECISION_SPECS, CARD3_PRESET_DECISION_SPECS, CARD3_PRESET_V2_DECISION_SPECS, CARD3_V2_DECISION_SPECS } from "../experiments/decision-specs.js";
+import { EXPERIMENTAL_RECOMMENDATION_VARIANTS } from "../experiments/recommendation-variants.js";
 import type { ChoiceDecisionSpec } from "../decision/types.js";
 import type { SampledPagePair } from "./representative-pages.js";
 
@@ -20,10 +20,12 @@ ${buildOpenAIDecisionContext()}`;
 
 export const OPENAI_PROMPT_VERSION_V2 = "adt-multimodal-v2";
 export const POC_V1_PROMPT_VERSION = "adt-config-recommender-poc-v1";
-export const OPENAI_PROMPT_VERSION_V2_RENDER_SPECS = "adt-multimodal-v2-render-specs-v1";
-export const OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V2 = "adt-multimodal-v2-render-specs-v2";
-export const OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V1 = "adt-multimodal-v2-render-specs-v1-preset-specs-v1";
-export const OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V2 = "adt-multimodal-v2-render-specs-v1-preset-specs-v2";
+export {
+  OPENAI_PROMPT_VERSION_V2_RENDER_SPECS,
+  OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V2,
+  OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V1,
+  OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V2,
+} from "../experiments/recommendation-variants.js";
 
 export const OPENAI_RECOMMENDATION_INSTRUCTIONS_V2 = `You are an ADT Studio configuration recommender.
 
@@ -47,41 +49,7 @@ ${buildOpenAIDecisionContext()}`;
 
 export function buildOpenAIRecommendationInstructionsV2(
   userLanguage: string,
-): string {
-  return buildOpenAIRecommendationInstructionsV2WithSpecs(userLanguage, DECISION_SPECS);
-}
-
-export function buildOpenAIRecommendationInstructionsV2RenderSpecs(
-  userLanguage: string,
-): string {
-  return buildOpenAIRecommendationInstructionsV2WithSpecs(userLanguage, CARD3_DECISION_SPECS);
-}
-
-export function buildPoCV1RecommendationInstructions(userLanguage: string): string {
-  return buildOpenAIRecommendationInstructionsV2WithSpecs(userLanguage, POC_V1_DECISION_SPECS);
-}
-
-export function buildOpenAIRecommendationInstructionsV2RenderSpecsV2(
-  userLanguage: string,
-): string {
-  return buildOpenAIRecommendationInstructionsV2WithSpecs(userLanguage, CARD3_V2_DECISION_SPECS);
-}
-
-export function buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV1(
-  userLanguage: string,
-): string {
-  return buildOpenAIRecommendationInstructionsV2WithSpecs(userLanguage, CARD3_PRESET_DECISION_SPECS);
-}
-
-export function buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV2(
-  userLanguage: string,
-): string {
-  return buildOpenAIRecommendationInstructionsV2WithSpecs(userLanguage, CARD3_PRESET_V2_DECISION_SPECS);
-}
-
-function buildOpenAIRecommendationInstructionsV2WithSpecs(
-  userLanguage: string,
-  decisionSpecs: readonly ChoiceDecisionSpec[],
+  decisionSpecs: readonly ChoiceDecisionSpec[] = DECISION_SPECS,
 ): string {
   if (userLanguage.trim().length === 0) {
     throw new Error("userLanguage is required for the V2 recommendation");
@@ -91,6 +59,34 @@ function buildOpenAIRecommendationInstructionsV2WithSpecs(
     buildOpenAIDecisionContext(decisionSpecs),
   );
   return `${instructions}\n\nUser language: ${userLanguage.trim()}`;
+}
+
+export function buildOpenAIRecommendationInstructionsV2RenderSpecs(
+  userLanguage: string,
+): string {
+  return buildOpenAIRecommendationInstructionsV2(userLanguage, EXPERIMENTAL_RECOMMENDATION_VARIANTS["v2-render-specs"].decisionSpecs);
+}
+
+export function buildPoCV1RecommendationInstructions(userLanguage: string): string {
+  return buildOpenAIRecommendationInstructionsV2(userLanguage, POC_V1_DECISION_SPECS);
+}
+
+export function buildOpenAIRecommendationInstructionsV2RenderSpecsV2(
+  userLanguage: string,
+): string {
+  return buildOpenAIRecommendationInstructionsV2(userLanguage, EXPERIMENTAL_RECOMMENDATION_VARIANTS["v2-render-specs-v2"].decisionSpecs);
+}
+
+export function buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV1(
+  userLanguage: string,
+): string {
+  return buildOpenAIRecommendationInstructionsV2(userLanguage, EXPERIMENTAL_RECOMMENDATION_VARIANTS["v2-render-specs-v1-preset-specs-v1"].decisionSpecs);
+}
+
+export function buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV2(
+  userLanguage: string,
+): string {
+  return buildOpenAIRecommendationInstructionsV2(userLanguage, EXPERIMENTAL_RECOMMENDATION_VARIANTS["v2-render-specs-v1-preset-specs-v2"].decisionSpecs);
 }
 
 export function buildOpenAIDecisionContext(
