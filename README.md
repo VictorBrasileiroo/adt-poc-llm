@@ -1,124 +1,72 @@
-# ADT Configuration Recommender POC
+# ADT Configuration Recommender PoC
 
-This repository is a standalone proof of concept that explores whether a multimodal LLM can recommend ADT Studio configuration values from a lightweight analysis of a PDF book.
+## Overview
 
-The POC combines deterministic structural PDF analysis, representative page sampling, extracted text, rendered visual evidence, ADT-specific Decision Specs, one multimodal OpenAI request, and structured recommendations. It is an experiment, not a production-ready system, and it does not perform a full ADT conversion.
+This standalone proof of concept recommends ADT Studio configuration values for a PDF book. It combines deterministic PDF analysis and sampled page evidence with one multimodal OpenAI request. **PoC V1 is an experimental human-in-the-loop recommendation engine.** Its suggestions require human review; it is not an autonomous production configuration selector or an ADT conversion pipeline.
 
-## Pipeline
+## Current stable version
 
-```text
-PDF
-|
-+-- Book Analyzer
-|   `-- BookProfile
-|
-`-- Representative Page Sampling
-    +-- Extracted page text
-    `-- Rendered page-pair contact sheets
+The canonical variant is `poc-v1`, with promptVersion `adt-config-recommender-poc-v1`. It recommends six fields: `preset`, `renderStrategy`, `pageGrouping`, `sectioningMode`, `activitiesGenerator`, and `figureExtraction`. The selected Decision Specs live in [`src/decision/specs.ts`](src/decision/specs.ts). Historical variants remain available for reproduction.
 
-BookProfile + Page Evidence + ADT Decision Specs
-                         |
-                         v
-                  Multimodal LLM
-                         |
-                         v
-             Structured Recommendation
+## Quick start
+
+Requires Node.js 20 or newer, an OpenAI API key, and an available model that supports the request. From the repository root:
+
+```powershell
+npm.cmd install
+Copy-Item .env.example .env
 ```
 
-## Recommendations
+Set `OPENAI_API_KEY` and `OPENAI_MODEL` in `.env` (see [`.env.example`](.env.example)). Then run the canonical variant on one included PDF:
 
-The POC recommends Preset, Render Strategy, Page Grouping, Sectioning Mode, Activities Generator, and Figure Extraction. See [`src/decision/specs.ts`](src/decision/specs.ts) and [`specs/`](specs/) for the current domain definitions and valid values.
+```powershell
+npm.cmd run recommend:openai -- "pdfs/storybook-1930-el-viaje.pdf" --variant poc-v1 --user-language pt-BR
+```
+
+`--user-language` specifies the language of `reason` and `ambiguityReason`; book language does not set it. The command makes an OpenAI request and writes `output/storybook-1930-el-viaje.openai-recommendation.poc-v1.json` and contact-sheet PNGs under `output/evidence/storybook-1930-el-viaje/poc-v1/`. Replace the PDF path with another book as needed. On shells where `npm` runs directly, `npm run recommend:openai -- ...` is equivalent. **The CLI default is still the historical `v1`; pass `--variant poc-v1` explicitly.**
 
 ## How it works
 
-1. Load a PDF locally.
-2. Produce deterministic structural metrics as a `BookProfile`.
-3. Select up to three representative consecutive page pairs.
-4. Extract limited text from the sampled pages.
-5. Render those pages and generate page-pair contact sheets.
-6. Build a multimodal request containing the `BookProfile`, ADT Decision Specs, sampled-page text, and rendered page evidence.
-7. Send one OpenAI request.
-8. Receive a Structured Output with a `choice`, `confidence`, concise `reason`, and `evidencePages` for every decision.
-
-## Requirements and installation
-
-Node.js 20 or newer is required.
-
-```sh
-npm install
+```text
+PDF → deterministic Book Analyzer → BookProfile
+    → representative page pairs → sampled text + rendered contact sheets
+    → Decision Specs + multimodal OpenAI request → structured recommendation
+    → semantic validation → JSON output
 ```
 
-## Configuration
+The analyzer produces structural measurements and heuristic signals. At most three page pairs supply limited text and images. The API receives the `BookProfile`, sampled text, and rendered contact sheets rather than the entire PDF; the request sets `store: false`. All six decisions share one model call. The parsed answer is checked for valid choices, ambiguity relationships, and sampled-page citations. There is no final cross-decision compatibility resolver. See [PoC V1](docs/POC_V1.md) and [Architecture](docs/ARCHITECTURE.md).
 
-Copy `.env.example` to `.env` and set:
+## Repository structure
 
-```dotenv
-OPENAI_API_KEY=your_key_here
-OPENAI_MODEL=gpt-5.4-mini
-```
+| Path | Role |
+| --- | --- |
+| `src/analyzer/` | PDF measurements and `BookProfile` aggregation |
+| `src/decision/` | Stable runtime Decision Specs, including PoC V1 |
+| `src/recommendation/` | Sampling, rendering, prompt, schema, variant registry, and OpenAI execution |
+| `src/experiments/` | Executable historical experiment definitions needed to reproduce old variants |
+| `evaluation/` | Frozen manual benchmark and scoring semantics |
+| `experiments/` | Human-readable experiment history and selection rationale |
+| `docs/` | Technical overview, architecture, and limitations |
+| `specs/` | Historical/reference ADT domain notes; use runtime specs for exact current wording |
+| `pdfs/` | Source PDF books currently present in this repository |
+| `output/` | Local generated recommendation JSON and rendered evidence; ignored by Git |
 
-Model availability and capability support depend on the OpenAI API account and project being used.
+## Evaluation snapshot
 
-## Usage
+The frozen benchmark has **18 manually validated decisions across four books**. PoC V1's historical equivalent, `v2-render-specs`, recorded **15/18 agreement**. This is agreement with known-good manual configurations, not formal model accuracy or evidence of generalization: the same books participated in iteration. Reference and Egito are diagnostic cases outside the scored denominator. See [Evaluation](evaluation/README.md) and [Experiment history](experiments/README.md).
 
-```sh
-npm run recommend -- ./path/to/book.pdf
-```
+## Limitations and use
 
-For example:
+The system has no OCR, uses sparse deterministic samples and heuristic signals, reports uncalibrated confidence, and has no final compatibility resolver or ADT Studio UI integration. Review its recommendations against the source book and ADT constraints before use. See [Limitations](docs/LIMITATIONS.md).
 
-```sh
-npm run recommend -- ./examples/book.pdf
-```
+## Documentation and checks
 
-The example path is illustrative; this repository does not ship a book PDF.
+- [PoC V1 technical and product guide](docs/POC_V1.md)
+- [Current architecture](docs/ARCHITECTURE.md)
+- [Known limitations and deferred areas](docs/LIMITATIONS.md)
+- [Frozen evaluation benchmark](evaluation/README.md)
+- [Experiment history](experiments/README.md)
 
-## Output
+Local checks: `npm.cmd run typecheck` and `npm.cmd test`. The normal self-tests use fake clients and do not call OpenAI; an optional PDF integration check runs only when its fixture is present.
 
-The command writes a JSON recommendation file under `output/` and rendered contact-sheet images under `output/evidence/`. The JSON contains the provider, model, prompt version, source PDF metadata, `BookProfile`, sampled pages, six recommendations, token usage, and timing data. Each recommendation contains its selected `choice`, `confidence`, evidence-grounded `reason`, and cited `evidencePages`.
-
-## Testing
-
-```sh
-npm test
-npm run typecheck
-```
-
-The default tests make no OpenAI API calls, require no API key, use no network access, and consume no API credits. An optional rendering integration check runs only when its local PDF fixture is present; no fixture is distributed here.
-
-## Current limitations
-
-- This is a proof of concept, not a production-ready system.
-- It does not perform OCR.
-- Structural measurements include heuristics and proxies.
-- Only a limited number of representative page pairs are sent to the model.
-- Visual evidence is sampled rather than exhaustive.
-- Recommendations may be wrong or ambiguous.
-- It is not integrated into the ADT Studio wizard or pipeline.
-- It does not implement a final compatibility validator.
-- Model/API usage has cost and latency.
-
-## Privacy and external API usage
-
-When a recommendation is executed, the configured OpenAI API receives the evidence prepared by this POC: structural `BookProfile` information, extracted text from sampled pages, and rendered sampled-page images/contact sheets. This implementation does not directly send the entire PDF. The API request currently sets `store: false`.
-
-Review the applicable API terms and your own data-handling requirements before processing documents.
-
-## Relationship to ADT Studio
-
-This repository is a standalone proof of concept exploring automatic configuration recommendation for ADT Studio. It is not the official ADT Studio repository, is not an official ADT Studio release, and should not be interpreted as an official UNICEF product unless explicitly adopted upstream. It uses no UNICEF logos and does not imply endorsement.
-
-The ADT-specific configuration terminology, option names, and domain context used by this POC were derived from reviewing the public ADT Studio codebase and documentation. The following upstream areas were reviewed for domain context and to understand configuration behavior:
-
-- `apps/studio/src/components/wizard/constants.ts`
-- `apps/studio/src/components/wizard/step2LayoutOptions/RenderStrategyPicker.tsx`
-- `apps/studio/src/components/wizard/step2LayoutOptions/PageGroupingMode.tsx`
-- `apps/studio/src/components/wizard/step2LayoutOptions/SectioningMode.tsx`
-- `apps/studio/src/components/wizard/step3ContentProcessing/index.tsx`
-- `apps/studio/src/components/wizard/bookCreationConfig.ts`
-- `packages/types/src/config.ts`
-- `packages/pipeline/src/pdf-extraction.ts`
-
-The authoritative upstream implementation is [unicef/adt-studio](https://github.com/unicef/adt-studio). Consult that repository for official source code, documentation, copyright notices, and licensing terms. The licensing decision for this proof of concept is separate and has not been made by this extraction task.
-
-See [NOTICE.md](NOTICE.md) for concise attribution.
+This repository is independent of ADT Studio and is not an official ADT Studio or UNICEF release. Domain terminology was informed by the [ADT Studio source](https://github.com/unicef/adt-studio); see [NOTICE.md](NOTICE.md) for attribution.

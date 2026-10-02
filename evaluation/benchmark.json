@@ -1,0 +1,46 @@
+{
+  "books": [
+    {
+      "id": "textbook-praticas-de-alfabetizacao-e-de-matematica",
+      "title": "Práticas de Alfabetização e Matemática",
+      "decisions": {
+        "preset": "textbook",
+        "renderStrategy": "llm",
+        "pageGrouping": "single",
+        "sectioningMode": "dynamic",
+        "activitiesGenerator": "enabled",
+        "figureExtraction": "auto"
+      }
+    },
+    {
+      "id": "storybook-colouring-my-school",
+      "title": "Colouring My School",
+      "decisions": {
+        "preset": "storybook",
+        "renderStrategy": "fixed_layout",
+        "pageGrouping": "spread",
+        "sectioningMode": "page"
+      }
+    },
+    {
+      "id": "storybook-hyena-and-raven",
+      "title": "Hyena and Raven",
+      "decisions": {
+        "preset": "storybook",
+        "renderStrategy": "two_column_story",
+        "pageGrouping": "single",
+        "sectioningMode": "page"
+      }
+    },
+    {
+      "id": "storybook-1930-el-viaje",
+      "title": "1930 · El viaje",
+      "decisions": {
+        "preset": "storybook",
+        "renderStrategy": "llm",
+        "pageGrouping": "single",
+        "sectioningMode": "page"
+      }
+    }
+  ]
+}
