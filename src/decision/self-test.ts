@@ -13,6 +13,7 @@ import {
   DECISION_SPECS,
   FIGURE_EXTRACTION_SPEC,
   PAGE_GROUPING_SPEC,
+  POC_V1_DECISION_SPECS,
   PRESET_SPEC,
   RENDER_STRATEGY_SPEC,
   SECTIONING_MODE_SPEC,
@@ -79,6 +80,27 @@ assertOptionIds(PAGE_GROUPING_SPEC, ["single", "spread"]);
 assertOptionIds(SECTIONING_MODE_SPEC, ["page", "dynamic"]);
 assertOptionIds(ACTIVITIES_SPEC, ["enabled", "disabled"]);
 assertOptionIds(FIGURE_EXTRACTION_SPEC, ["off", "auto", "all"]);
+
+assert.strictEqual(POC_V1_DECISION_SPECS, CARD3_DECISION_SPECS);
+assert.deepEqual(POC_V1_DECISION_SPECS, [
+  PRESET_SPEC,
+  CARD3_RENDER_STRATEGY_SPEC,
+  PAGE_GROUPING_SPEC,
+  SECTIONING_MODE_SPEC,
+  ACTIVITIES_SPEC,
+  FIGURE_EXTRACTION_SPEC,
+]);
+assert.strictEqual(POC_V1_DECISION_SPECS[0], PRESET_SPEC);
+assert.strictEqual(POC_V1_DECISION_SPECS[1], CARD3_RENDER_STRATEGY_SPEC);
+assert.strictEqual(POC_V1_DECISION_SPECS[2], PAGE_GROUPING_SPEC);
+assert.strictEqual(POC_V1_DECISION_SPECS[3], SECTIONING_MODE_SPEC);
+assert.strictEqual(POC_V1_DECISION_SPECS[4], ACTIVITIES_SPEC);
+assert.strictEqual(POC_V1_DECISION_SPECS[5], FIGURE_EXTRACTION_SPEC);
+for (const spec of POC_V1_DECISION_SPECS) {
+  assert.notStrictEqual(spec, CARD3_PRESET_SPEC);
+  assert.notStrictEqual(spec, CARD3_PRESET_SPEC_V2);
+  assert.notStrictEqual(spec, CARD3_V2_RENDER_STRATEGY_SPEC);
+}
 
 assert.deepEqual(CARD3_DECISION_SPECS.map(({ id }) => id), specs.map(({ id }) => id));
 assert.notStrictEqual(CARD3_RENDER_STRATEGY_SPEC, RENDER_STRATEGY_SPEC);

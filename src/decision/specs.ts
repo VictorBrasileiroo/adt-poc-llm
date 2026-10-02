@@ -185,6 +185,9 @@ export const CARD3_DECISION_SPECS = [
   FIGURE_EXTRACTION_SPEC,
 ] as const;
 
+// PoC V1 is the frozen stable configuration selected after Cards 1–3 experimentation.
+export const POC_V1_DECISION_SPECS = CARD3_DECISION_SPECS;
+
 export const CARD3_PRESET_SPEC = {
   id: "preset",
   instructions: "Which ADT preset best matches the book's primary purpose and content type?",

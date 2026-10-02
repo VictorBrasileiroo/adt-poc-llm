@@ -3,13 +3,14 @@ import path from "node:path";
 import {
   recommendBookWithOpenAI,
   recommendBookWithOpenAIV2,
+  recommendBookWithOpenAIPoCV1,
   recommendBookWithOpenAIV2RenderSpecs,
   recommendBookWithOpenAIV2RenderSpecsV2,
   recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV1,
   recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV2,
 } from "./openai-recommender.js";
 
-export type RecommendationVariant = "v1" | "v2" | "v2-render-specs" | "v2-render-specs-v2" | "v2-render-specs-v1-preset-specs-v1" | "v2-render-specs-v1-preset-specs-v2";
+export type RecommendationVariant = "v1" | "v2" | "poc-v1" | "v2-render-specs" | "v2-render-specs-v2" | "v2-render-specs-v1-preset-specs-v1" | "v2-render-specs-v1-preset-specs-v2";
 
 export type OpenAIRecommendationOptions =
   | { filePath: string; variant: "v1"; userLanguage?: never }
@@ -33,8 +34,8 @@ export function parseOpenAIRecommendationArgs(
       throw new Error(`A value is required for ${flag}`);
     }
     if (flag === "--variant" && !variantProvided) {
-      if (value !== "v1" && value !== "v2" && value !== "v2-render-specs" && value !== "v2-render-specs-v2" && value !== "v2-render-specs-v1-preset-specs-v1" && value !== "v2-render-specs-v1-preset-specs-v2") {
-        throw new Error("--variant must be v1, v2, v2-render-specs, v2-render-specs-v2, v2-render-specs-v1-preset-specs-v1, or v2-render-specs-v1-preset-specs-v2");
+      if (value !== "v1" && value !== "v2" && value !== "poc-v1" && value !== "v2-render-specs" && value !== "v2-render-specs-v2" && value !== "v2-render-specs-v1-preset-specs-v1" && value !== "v2-render-specs-v1-preset-specs-v2") {
+        throw new Error("--variant must be v1, v2, poc-v1, v2-render-specs, v2-render-specs-v2, v2-render-specs-v1-preset-specs-v1, or v2-render-specs-v1-preset-specs-v2");
       }
       variant = value;
       variantProvided = true;
@@ -52,7 +53,7 @@ export function parseOpenAIRecommendationArgs(
     throw new Error(`--user-language is required with --variant ${variant}`);
   }
   if (variant === "v1" && userLanguage !== undefined) {
-    throw new Error("--user-language is only supported with --variant v2, v2-render-specs, v2-render-specs-v2, v2-render-specs-v1-preset-specs-v1, or v2-render-specs-v1-preset-specs-v2");
+    throw new Error("--user-language is only supported with --variant v2, poc-v1, v2-render-specs, v2-render-specs-v2, v2-render-specs-v1-preset-specs-v1, or v2-render-specs-v1-preset-specs-v2");
   }
   return variant !== "v1"
     ? { filePath, variant, userLanguage: userLanguage! }
@@ -61,6 +62,7 @@ export function parseOpenAIRecommendationArgs(
 
 export function selectOpenAIRecommender(variant: "v1"): typeof recommendBookWithOpenAI;
 export function selectOpenAIRecommender(variant: "v2"): typeof recommendBookWithOpenAIV2;
+export function selectOpenAIRecommender(variant: "poc-v1"): typeof recommendBookWithOpenAIPoCV1;
 export function selectOpenAIRecommender(variant: "v2-render-specs"): typeof recommendBookWithOpenAIV2RenderSpecs;
 export function selectOpenAIRecommender(variant: "v2-render-specs-v2"): typeof recommendBookWithOpenAIV2RenderSpecsV2;
 export function selectOpenAIRecommender(variant: "v2-render-specs-v1-preset-specs-v1"): typeof recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV1;
@@ -68,6 +70,7 @@ export function selectOpenAIRecommender(variant: "v2-render-specs-v1-preset-spec
 export function selectOpenAIRecommender(variant: Exclude<RecommendationVariant, "v1">): typeof recommendBookWithOpenAIV2;
 export function selectOpenAIRecommender(variant: RecommendationVariant) {
   if (variant === "v2") return recommendBookWithOpenAIV2;
+  if (variant === "poc-v1") return recommendBookWithOpenAIPoCV1;
   if (variant === "v2-render-specs") return recommendBookWithOpenAIV2RenderSpecs;
   if (variant === "v2-render-specs-v2") return recommendBookWithOpenAIV2RenderSpecsV2;
   if (variant === "v2-render-specs-v1-preset-specs-v1") return recommendBookWithOpenAIV2RenderSpecsV1PresetSpecsV1;

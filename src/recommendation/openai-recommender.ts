@@ -4,6 +4,7 @@ import { zodTextFormat } from "openai/helpers/zod";
 import type { BookProfile } from "../analyzer/types.js";
 import {
   buildOpenAIRecommendationInstructionsV2,
+  buildPoCV1RecommendationInstructions,
   buildOpenAIRecommendationInstructionsV2RenderSpecs,
   buildOpenAIRecommendationInstructionsV2RenderSpecsV2,
   buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV1,
@@ -11,6 +12,7 @@ import {
   buildMultimodalRecommendationInput,
   OPENAI_PROMPT_VERSION,
   OPENAI_PROMPT_VERSION_V2,
+  POC_V1_PROMPT_VERSION,
   OPENAI_PROMPT_VERSION_V2_RENDER_SPECS,
   OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V2,
   OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V1,
@@ -132,6 +134,21 @@ export async function recommendBookWithOpenAIV2RenderSpecs(
     model, profile, pairs,
     buildOpenAIRecommendationInstructionsV2RenderSpecs(userLanguage),
     OPENAI_PROMPT_VERSION_V2_RENDER_SPECS, client,
+  );
+}
+
+export async function recommendBookWithOpenAIPoCV1(
+  apiKey: string,
+  model: string,
+  profile: BookProfile,
+  pairs: readonly SampledPagePair[],
+  userLanguage: string,
+  client: OpenAI = new OpenAI({ apiKey, maxRetries: 0 }),
+): Promise<OpenAIRecommendationResultV2> {
+  return recommendBookWithOpenAIV2Instructions(
+    model, profile, pairs,
+    buildPoCV1RecommendationInstructions(userLanguage),
+    POC_V1_PROMPT_VERSION, client,
   );
 }
 
