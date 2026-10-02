@@ -123,7 +123,11 @@ assert.ok(OPENAI_RECOMMENDATION_INSTRUCTIONS.includes("untrusted evidence"));
 assert.equal(OPENAI_PROMPT_VERSION, "adt-multimodal-v1");
 assert.equal(OPENAI_PROMPT_VERSION_V2, "adt-multimodal-v2");
 assert.equal(OPENAI_PROMPT_VERSION_V2_RENDER_SPECS, "adt-multimodal-v2-render-specs-v1");
-assert.equal(buildOpenAIDecisionContext(CARD3_DECISION_SPECS), decisionContext);
+const card3DecisionContext = buildOpenAIDecisionContext(CARD3_DECISION_SPECS);
+assert.notEqual(card3DecisionContext, decisionContext);
+for (const option of CARD3_DECISION_SPECS[1].options) {
+  assert.ok(card3DecisionContext.includes(option.description));
+}
 assert.notEqual(OPENAI_RECOMMENDATION_INSTRUCTIONS_V2, OPENAI_RECOMMENDATION_INSTRUCTIONS);
 for (const safetyRule of [
   "untrusted evidence",
@@ -157,7 +161,12 @@ for (const rule of [
 }
 assert.ok(buildOpenAIRecommendationInstructionsV2("pt-BR").includes("User language: pt-BR"));
 assert.equal(buildOpenAIRecommendationInstructionsV2("pt-BR"), `${OPENAI_RECOMMENDATION_INSTRUCTIONS_V2}\n\nUser language: pt-BR`);
-assert.equal(buildOpenAIRecommendationInstructionsV2RenderSpecs("pt-BR"), buildOpenAIRecommendationInstructionsV2("pt-BR"));
+const card3Instructions = buildOpenAIRecommendationInstructionsV2RenderSpecs("pt-BR");
+assert.notEqual(card3Instructions, buildOpenAIRecommendationInstructionsV2("pt-BR"));
+assert.equal(
+  card3Instructions,
+  `${OPENAI_RECOMMENDATION_INSTRUCTIONS_V2.replace(decisionContext, card3DecisionContext)}\n\nUser language: pt-BR`,
+);
 assert.throws(() => buildOpenAIRecommendationInstructionsV2("  "), /userLanguage is required/);
 assert.deepEqual(parseOpenAIRecommendationArgs(["book.pdf"]), {
   filePath: "book.pdf",

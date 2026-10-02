@@ -151,27 +151,27 @@ export const CARD3_RENDER_STRATEGY_SPEC = {
     {
       id: "llm",
       description:
-        "Adaptive AI-generated layout that can reorganize each page according to its content.",
+        "AI-generated reflowable layout that uses the source page as a visual reference but may reorganize content for clear, responsive HTML. Prefer when semantic structure and adaptability matter more than preserving exact page geometry.",
     },
     {
       id: "llm-overlay",
       description:
-        "AI-generated layout that keeps the original page as a visual background with text overlaid.",
+        "AI-generated layout that visually reconstructs the source page by using the original page image as a background and inferring positions for accessible text overlays. Prefer when strong visual fidelity matters but responsive adaptation and AI-based reconstruction are still desired.",
     },
     {
       id: "single_column",
       description:
-        "Reflowable full-width layout suited to dense reference, documentation, and technical content.",
+        "Deterministic reflowable single-column layout for predominantly linear content. Prefer when text can be read sequentially and meaning does not depend on page-specific spatial relationships; do not choose only because a book is text-heavy.",
     },
     {
       id: "two_column_story",
       description:
-        "Template for illustrated stories with large images and relatively little text.",
+        "Deterministic responsive story template that reorganizes content into a prominent image area and a text area. Prefer when pages consistently fit an image-plus-text structure; avoid when meaning depends on arbitrary or complex original positioning.",
     },
     {
       id: "fixed_layout",
       description:
-        "Preserves the original page composition using the page image as background with positioned text.",
+        "Preserves the source PDF page as a largely static, non-reflowable composition using its original page geometry and positioned text rather than asking AI to reconstruct the layout. Prefer when exact spatial placement is essential to meaning or experience; do not choose merely because pages are illustrated or visually complex.",
     },
   ],
 } as const satisfies ChoiceDecisionSpec<RenderStrategyDecision>;

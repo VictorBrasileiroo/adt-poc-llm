@@ -74,16 +74,37 @@ assertOptionIds(SECTIONING_MODE_SPEC, ["page", "dynamic"]);
 assertOptionIds(ACTIVITIES_SPEC, ["enabled", "disabled"]);
 assertOptionIds(FIGURE_EXTRACTION_SPEC, ["off", "auto", "all"]);
 
-assert.deepEqual(CARD3_DECISION_SPECS, DECISION_SPECS);
 assert.deepEqual(CARD3_DECISION_SPECS.map(({ id }) => id), specs.map(({ id }) => id));
 assert.notStrictEqual(CARD3_RENDER_STRATEGY_SPEC, RENDER_STRATEGY_SPEC);
 assert.notStrictEqual(CARD3_RENDER_STRATEGY_SPEC.options, RENDER_STRATEGY_SPEC.options);
+assert.equal(CARD3_RENDER_STRATEGY_SPEC.instructions, RENDER_STRATEGY_SPEC.instructions);
+assertOptionIds(CARD3_RENDER_STRATEGY_SPEC, getOptionIds(RENDER_STRATEGY_SPEC));
+assert.deepEqual(
+  CARD3_DECISION_SPECS
+    .filter((spec, index) => JSON.stringify(spec) !== JSON.stringify(DECISION_SPECS[index]))
+    .map(({ id }) => id),
+  ["renderStrategy"],
+);
 for (let index = 0; index < DECISION_SPECS.length; index++) {
   if (index !== 1) assert.strictEqual(CARD3_DECISION_SPECS[index], DECISION_SPECS[index]);
 }
-assert.deepEqual(RENDER_STRATEGY_SPEC.options.map(({ id }) => id), [
-  "llm", "llm-overlay", "single_column", "two_column_story", "fixed_layout",
-]);
+for (let index = 0; index < RENDER_STRATEGY_SPEC.options.length; index++) {
+  assert.notEqual(
+    CARD3_RENDER_STRATEGY_SPEC.options[index]!.description,
+    RENDER_STRATEGY_SPEC.options[index]!.description,
+  );
+}
+for (const title of [
+  "praticas de alfabetizacao e de matematica",
+  "hyena and raven",
+  "colouring my school",
+  "el viaje",
+  "reimagining target aware molecular",
+]) {
+  assert.ok(CARD3_RENDER_STRATEGY_SPEC.options.every(
+    ({ description }) => !description.toLowerCase().includes(title),
+  ));
+}
 
 console.log("Decision specs self-test passed.");
 
