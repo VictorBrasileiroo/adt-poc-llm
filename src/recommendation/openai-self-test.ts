@@ -7,7 +7,8 @@ import type OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import type { z } from "zod";
 
-import { CARD3_DECISION_SPECS, CARD3_PRESET_DECISION_SPECS, CARD3_PRESET_SPEC, CARD3_PRESET_V2_DECISION_SPECS, CARD3_V2_DECISION_SPECS, DECISION_SPECS, POC_V1_DECISION_SPECS } from "../decision/specs.js";
+import { DECISION_SPECS, POC_V1_DECISION_SPECS } from "../decision/specs.js";
+import { CARD3_DECISION_SPECS, CARD3_PRESET_DECISION_SPECS, CARD3_PRESET_SPEC, CARD3_PRESET_V2_DECISION_SPECS, CARD3_V2_DECISION_SPECS } from "../experiments/decision-specs.js";
 import type {
   ActivitiesDecision,
   FigureExtractionDecision,
@@ -148,6 +149,7 @@ assert.equal(new Set([OPENAI_PROMPT_VERSION, OPENAI_PROMPT_VERSION_V2, OPENAI_PR
 const card3DecisionContext = buildOpenAIDecisionContext(CARD3_DECISION_SPECS);
 assert.equal(buildOpenAIDecisionContext(POC_V1_DECISION_SPECS), card3DecisionContext);
 assert.equal(buildPoCV1RecommendationInstructions("pt-BR"), buildOpenAIRecommendationInstructionsV2RenderSpecs("pt-BR"));
+assert.equal(createHash("sha256").update(buildPoCV1RecommendationInstructions("pt-BR")).digest("hex"), "c7300e113e6b9dcff7c78d807389b27d3cb755691e7c17c5de74cad5a36ef7c9");
 assert.equal(
   createHash("sha256").update(card3DecisionContext).digest("hex"),
   "e79bafab8955d959a1d9b8bc180e0d815e7960886f6c2a459a199ce2cef6ea8e",

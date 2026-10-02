@@ -8,9 +8,10 @@
   "scripts": {
     "recommend": "tsx src/recommend-openai.ts",
     "recommend:openai": "tsx src/recommend-openai.ts",
-    "test": "npm run test:analyzer && npm run test:specs && npm run test:openai",
+    "test": "npm run test:analyzer && npm run test:specs && npm run test:experiments && npm run test:openai",
     "test:analyzer": "tsx src/analyzer/self-test.ts",
     "test:specs": "tsx src/decision/self-test.ts",
+    "test:experiments": "tsx src/experiments/decision-specs-self-test.ts",
     "test:openai": "tsx src/recommendation/openai-self-test.ts",
     "typecheck": "tsc --noEmit"
   },

@@ -1,7 +1,8 @@
 import type { ResponseInput } from "openai/resources/responses/responses";
 
 import type { BookProfile } from "../analyzer/types.js";
-import { CARD3_DECISION_SPECS, CARD3_PRESET_DECISION_SPECS, CARD3_PRESET_V2_DECISION_SPECS, CARD3_V2_DECISION_SPECS, DECISION_SPECS, POC_V1_DECISION_SPECS } from "../decision/specs.js";
+import { DECISION_SPECS, POC_V1_DECISION_SPECS } from "../decision/specs.js";
+import { CARD3_DECISION_SPECS, CARD3_PRESET_DECISION_SPECS, CARD3_PRESET_V2_DECISION_SPECS, CARD3_V2_DECISION_SPECS } from "../experiments/decision-specs.js";
 import type { ChoiceDecisionSpec } from "../decision/types.js";
 import type { SampledPagePair } from "./representative-pages.js";
 
