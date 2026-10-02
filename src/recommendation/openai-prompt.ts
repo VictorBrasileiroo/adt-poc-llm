@@ -1,7 +1,7 @@
 import type { ResponseInput } from "openai/resources/responses/responses";
 
 import type { BookProfile } from "../analyzer/types.js";
-import { CARD3_DECISION_SPECS, CARD3_V2_DECISION_SPECS, DECISION_SPECS } from "../decision/specs.js";
+import { CARD3_DECISION_SPECS, CARD3_PRESET_DECISION_SPECS, CARD3_V2_DECISION_SPECS, DECISION_SPECS } from "../decision/specs.js";
 import type { ChoiceDecisionSpec } from "../decision/types.js";
 import type { SampledPagePair } from "./representative-pages.js";
 
@@ -20,6 +20,7 @@ ${buildOpenAIDecisionContext()}`;
 export const OPENAI_PROMPT_VERSION_V2 = "adt-multimodal-v2";
 export const OPENAI_PROMPT_VERSION_V2_RENDER_SPECS = "adt-multimodal-v2-render-specs-v1";
 export const OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V2 = "adt-multimodal-v2-render-specs-v2";
+export const OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V1_PRESET_SPECS_V1 = "adt-multimodal-v2-render-specs-v1-preset-specs-v1";
 
 export const OPENAI_RECOMMENDATION_INSTRUCTIONS_V2 = `You are an ADT Studio configuration recommender.
 
@@ -57,6 +58,12 @@ export function buildOpenAIRecommendationInstructionsV2RenderSpecsV2(
   userLanguage: string,
 ): string {
   return buildOpenAIRecommendationInstructionsV2WithSpecs(userLanguage, CARD3_V2_DECISION_SPECS);
+}
+
+export function buildOpenAIRecommendationInstructionsV2RenderSpecsV1PresetSpecsV1(
+  userLanguage: string,
+): string {
+  return buildOpenAIRecommendationInstructionsV2WithSpecs(userLanguage, CARD3_PRESET_DECISION_SPECS);
 }
 
 function buildOpenAIRecommendationInstructionsV2WithSpecs(

@@ -185,6 +185,37 @@ export const CARD3_DECISION_SPECS = [
   FIGURE_EXTRACTION_SPEC,
 ] as const;
 
+export const CARD3_PRESET_SPEC = {
+  id: "preset",
+  instructions: "Which ADT preset best matches the book's primary purpose and content type?",
+  options: [
+    {
+      id: "textbook",
+      description:
+        "Instructional or educational material whose primary purpose is to teach, practice, or assess knowledge or skills. Typical examples include school textbooks, workbooks, course modules, and structured curricular materials. Do not choose solely because a book is used in an educational context, has educational front matter, structured chapters, or a complex layout.",
+    },
+    {
+      id: "storybook",
+      description:
+        "Literary or narrative content whose primary purpose is to tell or present a story. This includes picture books, children's literature, novels, chapter books, comics, and other narrative works. Illustrations, large images, or little text are not required, and educational use does not by itself make a narrative work a textbook.",
+    },
+    {
+      id: "reference",
+      description:
+        "Scientific, technical, or specialized informational material primarily intended for consultation, documentation, or communicating factual or research content. Typical examples include scientific papers, technical references, specialized manuals, and documentation. Do not choose only because a book is text-heavy, structured, or contains tables and glossaries.",
+    },
+  ],
+} as const satisfies ChoiceDecisionSpec<PresetDecision>;
+
+export const CARD3_PRESET_DECISION_SPECS = [
+  CARD3_PRESET_SPEC,
+  CARD3_RENDER_STRATEGY_SPEC,
+  PAGE_GROUPING_SPEC,
+  SECTIONING_MODE_SPEC,
+  ACTIVITIES_SPEC,
+  FIGURE_EXTRACTION_SPEC,
+] as const;
+
 export const CARD3_V2_RENDER_STRATEGY_SPEC = {
   ...CARD3_RENDER_STRATEGY_SPEC,
   options: [

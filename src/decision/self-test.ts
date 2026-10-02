@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   ACTIVITIES_SPEC,
   CARD3_DECISION_SPECS,
+  CARD3_PRESET_DECISION_SPECS,
+  CARD3_PRESET_SPEC,
   CARD3_RENDER_STRATEGY_SPEC,
   CARD3_V2_DECISION_SPECS,
   CARD3_V2_RENDER_STRATEGY_SPEC,
@@ -90,6 +92,28 @@ assert.deepEqual(
 for (let index = 0; index < DECISION_SPECS.length; index++) {
   if (index !== 1) assert.strictEqual(CARD3_DECISION_SPECS[index], DECISION_SPECS[index]);
 }
+assert.notStrictEqual(CARD3_PRESET_SPEC, PRESET_SPEC);
+assert.notStrictEqual(CARD3_PRESET_SPEC.options, PRESET_SPEC.options);
+assert.notEqual(CARD3_PRESET_SPEC.instructions, PRESET_SPEC.instructions);
+assertOptionIds(CARD3_PRESET_SPEC, getOptionIds(PRESET_SPEC));
+for (let index = 0; index < PRESET_SPEC.options.length; index++) {
+  assert.notEqual(CARD3_PRESET_SPEC.options[index]!.description, PRESET_SPEC.options[index]!.description);
+}
+assert.deepEqual(CARD3_PRESET_DECISION_SPECS.map(({ id }) => id), specs.map(({ id }) => id));
+assert.deepEqual(
+  CARD3_PRESET_DECISION_SPECS
+    .filter((spec, index) => JSON.stringify(spec) !== JSON.stringify(CARD3_DECISION_SPECS[index]))
+    .map(({ id }) => id),
+  ["preset"],
+);
+for (let index = 1; index < CARD3_DECISION_SPECS.length; index++) {
+  assert.strictEqual(CARD3_PRESET_DECISION_SPECS[index], CARD3_DECISION_SPECS[index]);
+}
+assert.strictEqual(CARD3_PRESET_DECISION_SPECS[1], CARD3_RENDER_STRATEGY_SPEC);
+assert.strictEqual(CARD3_PRESET_DECISION_SPECS[2], PAGE_GROUPING_SPEC);
+assert.strictEqual(CARD3_PRESET_DECISION_SPECS[3], SECTIONING_MODE_SPEC);
+assert.strictEqual(CARD3_PRESET_DECISION_SPECS[4], ACTIVITIES_SPEC);
+assert.strictEqual(CARD3_PRESET_DECISION_SPECS[5], FIGURE_EXTRACTION_SPEC);
 for (let index = 0; index < RENDER_STRATEGY_SPEC.options.length; index++) {
   assert.notEqual(
     CARD3_RENDER_STRATEGY_SPEC.options[index]!.description,
