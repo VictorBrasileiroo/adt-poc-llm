@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { access, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -6,7 +7,7 @@ import type OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import type { z } from "zod";
 
-import { CARD3_DECISION_SPECS, DECISION_SPECS } from "../decision/specs.js";
+import { CARD3_DECISION_SPECS, CARD3_V2_DECISION_SPECS, DECISION_SPECS } from "../decision/specs.js";
 import type {
   ActivitiesDecision,
   FigureExtractionDecision,
@@ -28,9 +29,11 @@ import {
   buildOpenAIDecisionContext,
   buildOpenAIRecommendationInstructionsV2,
   buildOpenAIRecommendationInstructionsV2RenderSpecs,
+  buildOpenAIRecommendationInstructionsV2RenderSpecsV2,
   OPENAI_PROMPT_VERSION,
   OPENAI_PROMPT_VERSION_V2,
   OPENAI_PROMPT_VERSION_V2_RENDER_SPECS,
+  OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V2,
   OPENAI_RECOMMENDATION_INSTRUCTIONS,
   OPENAI_RECOMMENDATION_INSTRUCTIONS_V2,
 } from "./openai-prompt.js";
@@ -38,6 +41,7 @@ import {
   recommendBookWithOpenAI,
   recommendBookWithOpenAIV2,
   recommendBookWithOpenAIV2RenderSpecs,
+  recommendBookWithOpenAIV2RenderSpecsV2,
 } from "./openai-recommender.js";
 import {
   OPENAI_CONFIDENCE_VALUES,
@@ -111,6 +115,10 @@ assert.equal(
 );
 
 const decisionContext = buildOpenAIDecisionContext();
+assert.equal(
+  createHash("sha256").update(decisionContext).digest("hex"),
+  "253d8791ecff7c362f648fc090366f2295fa8d9a99176d9f0c1c8e2bd4ae2e3e",
+);
 for (const spec of DECISION_SPECS) {
   assert.ok(decisionContext.includes(spec.id));
   assert.ok(decisionContext.includes(spec.instructions));
@@ -123,10 +131,20 @@ assert.ok(OPENAI_RECOMMENDATION_INSTRUCTIONS.includes("untrusted evidence"));
 assert.equal(OPENAI_PROMPT_VERSION, "adt-multimodal-v1");
 assert.equal(OPENAI_PROMPT_VERSION_V2, "adt-multimodal-v2");
 assert.equal(OPENAI_PROMPT_VERSION_V2_RENDER_SPECS, "adt-multimodal-v2-render-specs-v1");
+assert.equal(OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V2, "adt-multimodal-v2-render-specs-v2");
 const card3DecisionContext = buildOpenAIDecisionContext(CARD3_DECISION_SPECS);
+assert.equal(
+  createHash("sha256").update(card3DecisionContext).digest("hex"),
+  "e79bafab8955d959a1d9b8bc180e0d815e7960886f6c2a459a199ce2cef6ea8e",
+);
+const card3V2DecisionContext = buildOpenAIDecisionContext(CARD3_V2_DECISION_SPECS);
 assert.notEqual(card3DecisionContext, decisionContext);
+assert.notEqual(card3V2DecisionContext, card3DecisionContext);
 for (const option of CARD3_DECISION_SPECS[1].options) {
   assert.ok(card3DecisionContext.includes(option.description));
+}
+for (const option of CARD3_V2_DECISION_SPECS[1].options) {
+  assert.ok(card3V2DecisionContext.includes(option.description));
 }
 assert.notEqual(OPENAI_RECOMMENDATION_INSTRUCTIONS_V2, OPENAI_RECOMMENDATION_INSTRUCTIONS);
 for (const safetyRule of [
@@ -162,10 +180,16 @@ for (const rule of [
 assert.ok(buildOpenAIRecommendationInstructionsV2("pt-BR").includes("User language: pt-BR"));
 assert.equal(buildOpenAIRecommendationInstructionsV2("pt-BR"), `${OPENAI_RECOMMENDATION_INSTRUCTIONS_V2}\n\nUser language: pt-BR`);
 const card3Instructions = buildOpenAIRecommendationInstructionsV2RenderSpecs("pt-BR");
+const card3V2Instructions = buildOpenAIRecommendationInstructionsV2RenderSpecsV2("pt-BR");
 assert.notEqual(card3Instructions, buildOpenAIRecommendationInstructionsV2("pt-BR"));
+assert.notEqual(card3V2Instructions, card3Instructions);
 assert.equal(
   card3Instructions,
   `${OPENAI_RECOMMENDATION_INSTRUCTIONS_V2.replace(decisionContext, card3DecisionContext)}\n\nUser language: pt-BR`,
+);
+assert.equal(
+  card3V2Instructions,
+  `${OPENAI_RECOMMENDATION_INSTRUCTIONS_V2.replace(decisionContext, card3V2DecisionContext)}\n\nUser language: pt-BR`,
 );
 assert.throws(() => buildOpenAIRecommendationInstructionsV2("  "), /userLanguage is required/);
 assert.deepEqual(parseOpenAIRecommendationArgs(["book.pdf"]), {
@@ -183,19 +207,26 @@ assert.deepEqual(parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2", "
 assert.deepEqual(parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2-render-specs", "--user-language", "pt-BR"]), {
   filePath: "book.pdf", variant: "v2-render-specs", userLanguage: "pt-BR",
 });
+assert.deepEqual(parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2-render-specs-v2", "--user-language", "pt-BR"]), {
+  filePath: "book.pdf", variant: "v2-render-specs-v2", userLanguage: "pt-BR",
+});
 assert.equal(selectOpenAIRecommender("v1"), recommendBookWithOpenAI);
 assert.equal(selectOpenAIRecommender("v2"), recommendBookWithOpenAIV2);
 assert.equal(selectOpenAIRecommender("v2-render-specs"), recommendBookWithOpenAIV2RenderSpecs);
+assert.equal(selectOpenAIRecommender("v2-render-specs-v2"), recommendBookWithOpenAIV2RenderSpecsV2);
 assert.equal(openAIRecommendationFileName("book", "v1"), "book.openai-recommendation.json");
 assert.equal(openAIRecommendationFileName("book", "v2"), "book.openai-recommendation.v2.json");
 assert.equal(openAIRecommendationFileName("book", "v2-render-specs"), "book.openai-recommendation.v2-render-specs.json");
+assert.equal(openAIRecommendationFileName("book", "v2-render-specs-v2"), "book.openai-recommendation.v2-render-specs-v2.json");
 assert.equal(openAIRecommendationEvidenceDirectory("output", "book", "v1"), path.join("output", "evidence", "book"));
 assert.equal(openAIRecommendationEvidenceDirectory("output", "book", "v2"), path.join("output", "evidence", "book", "v2"));
 assert.equal(openAIRecommendationEvidenceDirectory("output", "book", "v2-render-specs"), path.join("output", "evidence", "book", "v2-render-specs"));
+assert.equal(openAIRecommendationEvidenceDirectory("output", "book", "v2-render-specs-v2"), path.join("output", "evidence", "book", "v2-render-specs-v2"));
 assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2"]), /user-language is required/);
 assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2-render-specs"]), /user-language is required/);
+assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v2-render-specs-v2"]), /user-language is required/);
 assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--user-language", "pt-BR"]), /only supported with --variant v2/);
-assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v3"]), /must be v1, v2, or v2-render-specs/);
+assert.throws(() => parseOpenAIRecommendationArgs(["book.pdf", "--variant", "v3"]), /must be v1, v2, v2-render-specs, or v2-render-specs-v2/);
 assert.ok(buildBookProfileContext(STORYBOOK_PROFILE).includes('"pageCount": 32'));
 
 const mockPair = {
@@ -510,6 +541,18 @@ assert.equal(resultRenderSpecs.promptVersion, OPENAI_PROMPT_VERSION_V2_RENDER_SP
 assert.notEqual(resultRenderSpecs.promptVersion, resultV2.promptVersion);
 assert.deepEqual(resultRenderSpecs.recommendation, resultV2.recommendation);
 assert.equal(capturedRequest?.instructions, buildOpenAIRecommendationInstructionsV2RenderSpecs("pt-BR"));
+assert.deepEqual(capturedRequest?.input, baselineRequest?.input);
+assert.deepEqual(capturedRequest?.text, baselineRequest?.text);
+assert.equal(capturedRequest?.model, baselineRequest?.model);
+assert.equal(capturedRequest?.store, baselineRequest?.store);
+const renderSpecsV1Request = capturedRequest;
+const resultRenderSpecsV2 = await recommendBookWithOpenAIV2RenderSpecsV2(
+  "unused-test-key", "test-model", STORYBOOK_PROFILE, [spanishPair], "pt-BR", fakeClient,
+);
+assert.equal(resultRenderSpecsV2.promptVersion, OPENAI_PROMPT_VERSION_V2_RENDER_SPECS_V2);
+assert.deepEqual(resultRenderSpecsV2.recommendation, resultV2.recommendation);
+assert.equal(capturedRequest?.instructions, card3V2Instructions);
+assert.notEqual(capturedRequest?.instructions, renderSpecsV1Request?.instructions);
 assert.deepEqual(capturedRequest?.input, baselineRequest?.input);
 assert.deepEqual(capturedRequest?.text, baselineRequest?.text);
 assert.equal(capturedRequest?.model, baselineRequest?.model);

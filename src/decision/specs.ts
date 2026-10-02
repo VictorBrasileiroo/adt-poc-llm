@@ -184,3 +184,35 @@ export const CARD3_DECISION_SPECS = [
   ACTIVITIES_SPEC,
   FIGURE_EXTRACTION_SPEC,
 ] as const;
+
+export const CARD3_V2_RENDER_STRATEGY_SPEC = {
+  ...CARD3_RENDER_STRATEGY_SPEC,
+  options: [
+    CARD3_RENDER_STRATEGY_SPEC.options[0],
+    {
+      id: "llm-overlay",
+      description:
+        "AI-generated layout that visually reconstructs the source page by using the original page image as a background and inferring positions for accessible text overlays. Prefer when important visual relationships should remain close to the source while responsive adaptation and AI-based reconstruction are still desired; do not choose solely because the original page is multi-column, technical, or visually complex.",
+    },
+    {
+      id: "single_column",
+      description:
+        "Deterministic reflowable single-column layout for content that can be safely linearized into a sequential reading flow. Prefer when meaning does not depend on preserving page-specific spatial relationships, even if the original PDF uses multiple visual columns; do not choose only because a book is text-heavy.",
+    },
+    {
+      id: "two_column_story",
+      description:
+        "Deterministic responsive story template that reorganizes content into a prominent image region and a separate text region. Prefer when image and text are distinct, separable content blocks that can be rearranged without losing important spatial meaning; avoid when text is embedded in, overlaid on, or dependent on the full-page illustration or composition.",
+    },
+    CARD3_RENDER_STRATEGY_SPEC.options[4],
+  ],
+} as const satisfies ChoiceDecisionSpec<RenderStrategyDecision>;
+
+export const CARD3_V2_DECISION_SPECS = [
+  PRESET_SPEC,
+  CARD3_V2_RENDER_STRATEGY_SPEC,
+  PAGE_GROUPING_SPEC,
+  SECTIONING_MODE_SPEC,
+  ACTIVITIES_SPEC,
+  FIGURE_EXTRACTION_SPEC,
+] as const;

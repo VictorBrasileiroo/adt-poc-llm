@@ -4,6 +4,8 @@ import {
   ACTIVITIES_SPEC,
   CARD3_DECISION_SPECS,
   CARD3_RENDER_STRATEGY_SPEC,
+  CARD3_V2_DECISION_SPECS,
+  CARD3_V2_RENDER_STRATEGY_SPEC,
   DECISION_SPECS,
   FIGURE_EXTRACTION_SPEC,
   PAGE_GROUPING_SPEC,
@@ -94,6 +96,26 @@ for (let index = 0; index < RENDER_STRATEGY_SPEC.options.length; index++) {
     RENDER_STRATEGY_SPEC.options[index]!.description,
   );
 }
+assert.deepEqual(CARD3_V2_DECISION_SPECS.map(({ id }) => id), specs.map(({ id }) => id));
+assert.equal(CARD3_V2_RENDER_STRATEGY_SPEC.instructions, RENDER_STRATEGY_SPEC.instructions);
+assertOptionIds(CARD3_V2_RENDER_STRATEGY_SPEC, getOptionIds(RENDER_STRATEGY_SPEC));
+assert.deepEqual(
+  CARD3_V2_DECISION_SPECS
+    .filter((spec, index) => JSON.stringify(spec) !== JSON.stringify(DECISION_SPECS[index]))
+    .map(({ id }) => id),
+  ["renderStrategy"],
+);
+assert.deepEqual(
+  CARD3_V2_RENDER_STRATEGY_SPEC.options
+    .filter((option, index) => option.description !== CARD3_RENDER_STRATEGY_SPEC.options[index]?.description)
+    .map(({ id }) => id),
+  ["llm-overlay", "single_column", "two_column_story"],
+);
+assert.strictEqual(CARD3_V2_RENDER_STRATEGY_SPEC.options[0], CARD3_RENDER_STRATEGY_SPEC.options[0]);
+assert.strictEqual(CARD3_V2_RENDER_STRATEGY_SPEC.options[4], CARD3_RENDER_STRATEGY_SPEC.options[4]);
+for (let index = 0; index < DECISION_SPECS.length; index++) {
+  if (index !== 1) assert.strictEqual(CARD3_V2_DECISION_SPECS[index], DECISION_SPECS[index]);
+}
 for (const title of [
   "praticas de alfabetizacao e de matematica",
   "hyena and raven",
@@ -101,9 +123,11 @@ for (const title of [
   "el viaje",
   "reimagining target aware molecular",
 ]) {
-  assert.ok(CARD3_RENDER_STRATEGY_SPEC.options.every(
-    ({ description }) => !description.toLowerCase().includes(title),
-  ));
+  for (const spec of [CARD3_RENDER_STRATEGY_SPEC, CARD3_V2_RENDER_STRATEGY_SPEC]) {
+    assert.ok(spec.options.every(
+      ({ description }) => !description.toLowerCase().includes(title),
+    ));
+  }
 }
 
 console.log("Decision specs self-test passed.");
